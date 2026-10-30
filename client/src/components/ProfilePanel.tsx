@@ -43,7 +43,6 @@ export default function ProfilePanel({ careTeam = false, onNavigate }: { careTea
           <MyFace size={52} className="site-me-face" />
           <span className="site-me-words">
             <b>{me.name}</b>
-            <span className="site-me-title">{me.title}</span>
             <Link className="site-me-link" {...link(me.profileHref)}>View your profile</Link>
           </span>
         </div>

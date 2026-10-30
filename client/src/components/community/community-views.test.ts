@@ -63,6 +63,11 @@ describe("Rehyn Connect for clinicians views", () => {
     expect(html.indexOf("My Consultations")).toBeLessThan(html.indexOf("Group weekly sessions"));
     expect(tagWith(html, "a", 'href="/clinicians/portal/consultations"')).toBe(true);
     expect(tagWith(html, "a", 'href="/community?space=circle"', 'class="cm-sessions-all"')).toBe(true);
+    // Consultation rows give only the length (every consultation is by video), with no example label or demo note;
+    // session rows give the date and time range and the title, with no minutes, topics or places.
+    expect(html).toMatch(/<span>30 min<\/span>/);
+    for (const gone of ["Video · 30 min", "· Example", "Examples for the demo profile", "· 60 min", "· 45 min", "25 places", "20 places"]) expect(text).not.toContain(gone);
+    expect(html).not.toContain("cm-session-meta");
     for (const gone of ["The library", "Open the library", "Community guidelines and safety", "Take your seat", "Join the conversation", "Your groups", "People you may know"]) expect(text).not.toContain(gone);
     expect(tagWith(html, "a", 'href="/community?space=start"')).toBe(false);
   });

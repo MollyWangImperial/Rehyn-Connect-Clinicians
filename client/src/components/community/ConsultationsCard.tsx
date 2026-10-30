@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Video } from "lucide-react";
-import { dayText, clockText } from "@/content/clinicians";
+import { CONSULTATION_MINUTES, dayText, clockText } from "@/content/clinicians";
 import { previewConsultations } from "@/content/consultation-preview";
 import { useConsultations } from "@/lib/consultations";
 import { useMe } from "@/lib/me";
@@ -16,7 +16,7 @@ const RUNNING_MS = 30 * 60_000;
 /**
  * The signed-in clinician's upcoming patient consultations, soonest first: the confirmed ones kept on this device
  * (lib/consultations.ts, the same list the clinician portal shows), then, for the demo profile, the preview's example
- * appointments (content/consultation-preview.ts), which are marked as examples.
+ * appointments (content/consultation-preview.ts). The card shows both alike; the portal labels the examples.
  */
 export function useMyConsultations(): Appointment[] {
   const me = useMe();
@@ -56,7 +56,8 @@ export default function ConsultationsCard() {
                 <span className="cc-when"><b>{dayText(new Date(item.at), now)}</b><span>{clockText(new Date(item.at))}</span></span>
                 <span className="cc-who">
                   <b>{item.patient}</b>
-                  <span>{item.urgent ? "Urgent · video" : "Video · 30 min"}{item.preview && <span className="cc-example"> · Example</span>}</span>
+                  {/* Every consultation is by video, so the card gives only its length (and urgency). */}
+                  <span>{item.urgent ? `Urgent · ${CONSULTATION_MINUTES} min` : `${CONSULTATION_MINUTES} min`}</span>
                 </span>
                 <Video size={16} aria-hidden="true" className="cc-icon" />
               </Link>
@@ -64,7 +65,6 @@ export default function ConsultationsCard() {
           ))}
         </ul>
       )}
-      {appointments.some(item => item.preview) && <p className="cc-note">Examples for the demo profile: patients book in the separate patient app, which isn't linked to this preview yet.</p>}
     </section>
   );
 }

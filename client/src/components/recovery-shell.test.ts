@@ -54,7 +54,10 @@ describe("the shell: tabs at the top right, your panel on the left", () => {
     const drawn = draw("/community");
     vi.useRealTimers();
     const { html, text, hrefs } = drawn;
-    for (const words of ["Dr Amara Osei", "Consultant stroke physician", "View your profile", "My Network", "2 invitations waiting", "My professional events", "My consultations", "Your groups", "See all", "Stroke Rehabilitation Network", "Parkinson&#x27;s Clinical Network", "Start a group"]) {
+    // The summary is the avatar, the name and the profile link; the professional title is on the profile itself.
+    expect(text).not.toContain("Consultant stroke physician");
+    expect(html).not.toContain("site-me-title");
+    for (const words of ["Dr Amara Osei", "View your profile", "My Network", "2 invitations waiting", "My professional events", "My consultations", "Your groups", "See all", "Stroke Rehabilitation Network", "Parkinson&#x27;s Clinical Network", "Start a group"]) {
       expect(text, words).toContain(words);
     }
     for (const gone of ["The library", "Look up a topic", "Open the library"]) expect(text, gone).not.toContain(gone);

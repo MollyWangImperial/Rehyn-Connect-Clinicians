@@ -15,7 +15,5 @@
 .cc-who { display: flex; flex: 1; flex-direction: column; min-width: 0; font-size: 13.5px; line-height: 1.35; }
 .cc-who b { overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .cc-who > span { color: var(--cx-muted); font-size: 12.5px; }
-.cc-example { color: var(--cx-warn); font-weight: 600; }
 .cc-icon { flex: none; color: var(--cx-faint); }
-.cc-empty, .cc-note { margin: 4px 0 0; color: var(--cx-muted); font-size: 12.5px; line-height: 1.45; }
-.cc-note { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--cx-line); }
+.cc-empty { margin: 4px 0 0; color: var(--cx-muted); font-size: 12.5px; line-height: 1.45; }

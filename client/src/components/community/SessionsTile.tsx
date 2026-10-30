@@ -4,11 +4,11 @@ import { ArrowRight, Users } from "lucide-react";
 import { useCreatedSessions } from "@/lib/consultations";
 import { useMe } from "@/lib/me";
 import { useMinute } from "../clinicians/GroupSessions";
-import { STATUS_TEXT, hostedSessions, patientGroupText, scheduleText, sessionStatus, sessionViewHref } from "./weekly-sessions-model";
+import { STATUS_TEXT, hostedSessions, scheduleText, sessionStatus, sessionViewHref } from "./weekly-sessions-model";
 import "./sessions-tile.css";
 
 // "Group weekly sessions", in the feed's right-hand lane (comment 18): the next few patient Q&A sessions the signed-in
-// clinician hosts, upcoming or live, each with its day, time, length and patient group. Each opens that session in the
+// clinician hosts, upcoming or live, each with its day, time range and title. Each opens that session in the
 // Group weekly sessions view (/community?space=circle&session=<id>). A clinician hosting none sees no card at all.
 
 const SHOWN = 3;
@@ -33,10 +33,10 @@ export default function SessionsTile() {
               <Link href={sessionViewHref(session)} className="cm-session-row">
                 <span className="cm-session-when">
                   {status === "upcoming" ? null : <span className={`cx-pill${status === "live" ? " is-live" : " is-accent"}`}>{STATUS_TEXT[status]}</span>}
-                  <span>{scheduleText(session, now)} · {session.minutes} min</span>
+                  {/* The time range already says how long it is; topics and places show once the session is open. */}
+                  <span>{scheduleText(session, now)}</span>
                 </span>
                 <b className="cm-session-title">{session.title}</b>
-                <span className="cm-session-meta">{patientGroupText(session)} · {session.spaces} places</span>
               </Link>
             </li>
           );

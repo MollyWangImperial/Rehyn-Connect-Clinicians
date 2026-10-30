@@ -62,7 +62,7 @@ function SessionDetail({ session, now, questions, saved, headingRef }: { session
       <h2 className="ws-detail-title" id={titleId} ref={headingRef} tabIndex={-1}>{session.title}</h2>
       <p className="ws-detail-about">{session.about}</p>
       <dl className="ws-facts">
-        <div><dt>Patient group</dt><dd>{patientGroupText(session)}</dd></div>
+        <div><dt>Topics</dt><dd>{patientGroupText(session)}</dd></div>
         <div><dt>Date</dt><dd>{start.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</dd></div>
         <div><dt>Time</dt><dd>{timeRangeText(session)}</dd></div>
         <div><dt>Duration</dt><dd>{session.minutes} minutes</dd></div>

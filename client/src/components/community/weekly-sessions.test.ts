@@ -57,7 +57,7 @@ describe("Group weekly sessions", () => {
     const text = words(html);
     expect(html).toMatch(/<h1[^>]*tabindex="-1"[^>]*data-view-heading[^>]*>Group weekly sessions<\/h1>/);
     expect(text).not.toMatch(/Sunday circle|teacup/i);
-    for (const label of ["Patient group", "Date", "Time", "Duration", "Places", "Upcoming", "Finished"]) expect(text).toContain(label);
+    for (const label of ["Topics", "Date", "Time", "Duration", "Places", "Upcoming", "Finished"]) expect(text).toContain(label);
     expect(text).toContain("Stroke, Blood pressure");
     expect(text).toContain("The room opens at 17:50");
     expect(text).toContain("Example questions (preview)");
