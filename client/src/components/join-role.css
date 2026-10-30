@@ -11,3 +11,6 @@
 .join-role-back { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border: 1px solid #dfe4da; border-radius: 999px; background: #fff; color: #285b49; font: 700 13px "Manrope", sans-serif; cursor: pointer; }
 .join-select { min-height: 48px; padding: 0 12px; border: 1px solid #cfd8cf; border-radius: 12px; background: #fff; color: #24362f; font: inherit; font-size: 16px; }
 .join-select:focus-visible { outline: 3px solid #285b49; outline-offset: 2px; }
+
+/* Rehyn Connect for clinicians: the edition under the brand on the Join page. */
+.join-edition { display: inline-block; margin-left: 6px; padding: 2px 6px; border: 1px solid #c3c8ce; border-radius: 4px; color: #5b636b; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; }

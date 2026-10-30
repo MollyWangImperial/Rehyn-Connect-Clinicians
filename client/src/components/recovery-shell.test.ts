@@ -25,14 +25,20 @@ function draw(path: string) {
 }
 
 describe("the shell: tabs at the top right, your panel on the left", () => {
-  it("has the Feed, the Library and the community's spaces as tabs, leading to the real pages from the Library too", () => {
+  it("has the Feed, the Library, Clinicians and the network's spaces as tabs, leading to the real pages from the Library too", () => {
     for (const path of ["/library", "/library/stroke/ischaemic"]) {
-      const { html, hrefs } = draw(path);
-      // (The Poker night tab appears on Fridays only, so it is left out of the comparison.)
-      const tabHrefs = (html.match(/<a\b[^>]*>/g) ?? []).filter(tag => tag.includes('class="site-tab ')).map(tag => tag.match(/href="([^"]*)"/)![1].replace(/&amp;/g, "&")).filter(href => href !== "/community?space=poker");
+      const { html, hrefs, text } = draw(path);
+      // No lounge and no poker night in the clinician edition, on any day.
+      const tabHrefs = (html.match(/<a\b[^>]*>/g) ?? []).filter(tag => tag.includes('class="site-tab ')).map(tag => tag.match(/href="([^"]*)"/)![1].replace(/&amp;/g, "&"));
       expect(tabHrefs).toEqual([
-        "/community", "/library", "/clinicians", "/community?space=lounge", "/community?space=circle", "/community?space=groups", "/community?space=messages",
+        "/community", "/library", "/clinicians", "/community?space=circle", "/community?space=groups", "/community?space=messages",
       ]);
+      for (const label of ["Feed", "Library", "Clinicians", "Group weekly sessions", "Groups", "Messages"]) expect(text, label).toContain(label);
+      for (const gone of ["Lounge", "Poker", "Sunday circle"]) expect(text, gone).not.toContain(gone);
+      expect(hrefs.some(href => href.includes("space=lounge") || href.includes("space=poker"))).toBe(false);
+      // The brand says which edition this is.
+      expect(text).toContain("Rehyn : Connect for clinicians");
+      expect(html).toContain('aria-label="Rehyn: Connect for clinicians, go to the Feed"');
       const active = (html.match(/<a\b[^>]*>/g) ?? []).filter(tag => tag.includes('class="site-tab is-active"'));
       expect(active).toHaveLength(1);
       expect(active[0]).toContain('href="/library"');
@@ -42,24 +48,26 @@ describe("the shell: tabs at the top right, your panel on the left", () => {
     }
   });
 
-  it("shows your profile, friends, saved pages, events, alerts and two of your groups on the left (the Library card is in the feed's right lane); the care team only when switched on", () => {
-    // Midday, outside the default quiet hours, when the Alerts row counts what is new.
+  it("shows the signed-in clinician, My Network, professional events, consultations and two of your groups on the left (the Library card is in the feed's right lane); the care team only when switched on", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 17, 12, 0));
     const drawn = draw("/community");
     vi.useRealTimers();
     const { html, text, hrefs } = drawn;
-    for (const words of ["View your profile", "Friends", "Saved", "My events", "My consultations", "Alerts", "Your groups", "See all", "Start a group"]) {
+    for (const words of ["Dr Amara Osei", "Consultant stroke physician", "View your profile", "My Network", "2 invitations waiting", "My professional events", "My consultations", "Your groups", "See all", "Stroke Rehabilitation Network", "Parkinson&#x27;s Clinical Network", "Start a group"]) {
       expect(text, words).toContain(words);
     }
     for (const gone of ["The library", "Look up a topic", "Open the library"]) expect(text, gone).not.toContain(gone);
-    for (const href of ["/community?panel=friends", "/community?space=circle&tab=mine", "/clinicians/consultations", "/community?space=groups&group=garden", "/community?space=groups", "/community?space=start"]) {
+    for (const href of ["/clinicians/amara-osei", "/community?panel=friends", "/community?space=events", "/clinicians/portal/consultations", "/community?space=groups&group=garden", "/community?space=groups&group=walk", "/community?space=groups", "/community?space=start"]) {
       expect(hrefs, href).toContain(href);
     }
-    // "View your profile" opens Settings → Your profile (a window), not a page.
-    expect(html).toMatch(/<button[^>]*class="site-me-link"[^>]*aria-haspopup="dialog"[^>]*>View your profile<\/button>/);
-    // Feed review: Alerts is a row under the profile that opens its panel; the footer links are gone.
-    expect(html).toMatch(/<button[^>]*class="site-row [^"]*"[^>]*aria-label="Alerts, 4 new"[^>]*aria-haspopup="dialog"[^>]*data-cm-tool="alerts"/);
+    // "View your profile" is a link to the clinician's own page in the directory.
+    const profileLink = html.match(/<a\b[^>]*>View your profile<\/a>/)?.[0] ?? "";
+    expect(profileLink).toContain('class="site-me-link"');
+    expect(profileLink).toContain('href="/clinicians/amara-osei"');
+    // Saved, Alerts and Game are patient features: no rows for them, and Alerts can't be reached from here.
+    for (const gone of ["Saved", "Alerts", "Game", "Friends", "My events"]) expect(text, gone).not.toContain(gone);
+    expect(html).not.toContain('data-cm-tool="alerts"');
     expect(html).not.toContain("site-foot");
     for (const gone of ["House rules", "Privacy"]) expect(text).not.toContain(gone);
     // Review comments: no date above the profile, no reading minutes, two groups, no care team for members.
@@ -84,27 +92,29 @@ describe("the shell: tabs at the top right, your panel on the left", () => {
     expect(hrefs.some(href => href.startsWith("/fast-check") || href === "/my-time" || href === "/journey" || href === "/")).toBe(false);
   });
 
-  it("opens a live peek of the Sunday circle from its tab, with a seat to take", () => {
+  it("has a plain Group weekly sessions tab, with no Sunday circle peek or seat to take", () => {
     const { html, text } = draw("/library");
-    // The tab names today's get-together for a screen reader; the peek shows who's there and a seat.
     const circleTab = (html.match(/<a\b[^>]*>/g) ?? []).find(tag => tag.includes('href="/community?space=circle"') && tag.includes('class="site-tab '));
-    const described = circleTab?.match(/aria-describedby="([^"]+)"/)?.[1];
-    expect(described).toBeTruthy();
-    expect(html).toMatch(new RegExp(`<p class="cm-peek-title" id="${described}">[^<]+</p>`));
-    expect(text).toContain("Live · Hosted by Alira");
-    const seat = (html.match(/<a\b[^>]*>/g) ?? []).find(tag => tag.includes('class="cm-btn cm-btn-gold cm-btn-wide"'));
-    expect(seat).toContain('href="/community?space=circle"');
+    expect(circleTab).toBeTruthy();
+    expect(circleTab).not.toContain("aria-describedby");
+    expect(html).not.toContain("cm-peek");
+    expect(text).not.toContain("Hosted by Alira");
+    expect(html).not.toContain('class="cm-btn cm-btn-gold cm-btn-wide"');
   });
 });
 
 describe("which tab an address belongs to", () => {
   it.each([
     ["/community", "", "feed"],
-    ["/community", "?space=lounge", "lounge"],
+    // The lounge and poker night are not spaces any more: their old addresses open the feed.
+    ["/community", "?space=lounge", "feed"],
+    ["/community", "?space=poker", "feed"],
+    // Professional events are reached from the panel, not a tab.
+    ["/community", "?space=events", null],
     ["/community", "?space=circle&tab=mine", "circle"],
     ["/community", "?space=start", "groups"],
     ["/community", "?space=groups&group=garden&game=new", "groups"],
-    ["/community", "?space=messages&chat=anne", "messages"],
+    ["/community", "?space=messages&chat=grace", "messages"],
     ["/community", "?space=friends", null],
     ["/community", "?space=safety", null],
     ["/library", "", "library"],

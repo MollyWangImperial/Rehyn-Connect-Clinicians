@@ -13,11 +13,11 @@ import PokerTable from "./PokerTable";
 
 /** What people at the table say as the evening starts (examples). */
 const OPENERS: Record<string, string> = {
-  margaret: "Evening all! Lucky cardigan is on.",
-  david: "Biscuit is supervising from the sofa.",
+  hannah: "Evening all! Lucky cardigan is on.",
+  kwame: "Biscuit is supervising from the sofa.",
   priya: "Tea made, cards ready.",
-  samuel: "Go easy on me, I'm new to this.",
-  anne: "Hello everyone, good luck tonight!",
+  joseph: "Go easy on me, I'm new to this.",
+  grace: "Hello everyone, good luck tonight!",
 };
 const PHRASES: { label: string; tone: string; reply: string }[] = [
   { label: "Nice hand!", tone: "gold", reply: "Beginner's luck, I tell you." },
@@ -66,7 +66,7 @@ export default function PokerSpace({ active }: { active: boolean }) {
   const on = pokerNightOn(poker);
   const seated = poker.status === "seated" && !!mine;
   const atHoldem = seated && mine?.game === "holdem";
-  const practice = [ME, ...(["margaret", "david", "priya", "samuel"] as PersonId[]).filter(id => canSee(memory, id))];
+  const practice = [ME, ...(["hannah", "kwame", "priya", "joseph"] as PersonId[]).filter(id => canSee(memory, id))];
   const seats = atHoldem && mine ? mine.players : practice;
   const tableLabel = atHoldem && mine ? `Table ${mine.number}` : "Practice table";
   const note = seated && !atHoldem

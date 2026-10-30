@@ -5,6 +5,7 @@ import {
   MAX_SESSION_PRICE, REHYN_SHARE, WINDOW_HOURS, clinicianGroups, clinicianShare, clockText, freeTimes, poundsText, sessionPriceText, shareText,
   upcomingSessions, whenText, works, type Clinician,
 } from "@/content/clinicians";
+import { previewConsultations } from "@/content/consultation-preview";
 import { librarySections } from "@/content/library";
 import { profileGaps, registerText } from "@/lib/clinician-portal";
 import {
@@ -256,14 +257,22 @@ export function PortalConsultations({ me }: { me: Clinician }) {
   const mine = list.filter(item => item.clinicianId === me.id);
   const upcoming = mine.filter(item => item.status === "scheduled").sort((a, b) => (a.at ?? 0) - (b.at ?? 0));
   const finished = mine.filter(item => item.status === "done").sort((a, b) => (b.at ?? 0) - (a.at ?? 0));
+  // The demo profile's example appointments (content/consultation-preview.ts), kept apart from the real list.
+  const examples = previewConsultations(me.id);
+  // The feed's My Consultations card links here at #c-<id>: bring that consultation into view.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id) document.getElementById(id)?.scrollIntoView({ block: "center" });
+  }, []);
   return (
     <div className="pt-page">
       <Head kicker="Your video calls with patients" title="Consultations" />
       <section className="pt-section" aria-labelledby="pt-coming">
         <h2 className="cl-h2" id="pt-coming">Coming up</h2>
         {upcoming.length === 0 ? <p className="cl-small">Nothing booked yet. Confirmed requests and urgent consultations appear here.</p> : upcoming.map(item => (
-          <article key={item.id} className="pt-card pt-row">
+          <article key={item.id} id={`c-${item.id}`} className="pt-card pt-row">
             <div className="pt-row-text">
+              {item.patientName && <p className="pt-patient">{item.patientName}</p>}
               <p className="cl-label">{item.urgent ? "Urgent · " : ""}{item.at ? whenText(new Date(item.at)) : "Now"} · {ref(item)} · £{item.price} held</p>
               {questionLines(item).length ? <ol className="pt-questions">{questionLines(item).map((line, index) => <li key={index}>{line}</li>)}</ol> : <p className="cl-small">No questions written.</p>}
             </div>
@@ -271,6 +280,21 @@ export function PortalConsultations({ me }: { me: Clinician }) {
           </article>
         ))}
       </section>
+      {examples.length > 0 && (
+        <section className="pt-section" aria-labelledby="pt-examples">
+          <h2 className="cl-h2" id="pt-examples">Example appointments (preview)</h2>
+          <p className="cl-small">These show the demo profile how booked consultations look. They are not real patients: patients book in the separate patient app, which isn't linked to this preview yet.</p>
+          {examples.map(item => (
+            <article key={item.id} id={`c-${item.id}`} className="pt-card pt-row">
+              <div className="pt-row-text">
+                <p className="pt-patient">{item.patientName} <span className="cl-small">· example</span></p>
+                <p className="cl-label">{item.at ? whenText(new Date(item.at)) : "Now"} · ref {item.ref} · 30 min video</p>
+                <ol className="pt-questions">{questionLines(item).map((line, index) => <li key={index}>{line}</li>)}</ol>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
       <section className="pt-section" aria-labelledby="pt-done">
         <h2 className="cl-h2" id="pt-done">Finished</h2>
         {finished.length === 0 ? <p className="cl-small">Finished consultations, with their transcripts and your notes, are kept here.</p> : finished.map(item => (

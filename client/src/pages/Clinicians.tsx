@@ -1,220 +1,222 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link, Route, Switch, useLocation, useSearch } from "wouter";
-import { ArrowLeft, ArrowRight, Check, Clock, Globe, Search, ShieldCheck, SlidersHorizontal, Video, X } from "lucide-react";
+import { Link, Redirect, Route, Switch, useLocation, useSearch } from "wouter";
+import { ArrowRight, Search, SlidersHorizontal, X } from "lucide-react";
 import RecoveryShell from "@/components/RecoveryShell";
-import BookConsultation from "@/components/clinicians/BookConsultation";
-import ClinicianCard, { SaveButton } from "@/components/clinicians/ClinicianCard";
 import ClinicianPortal from "@/components/clinicians/ClinicianPortal";
-import ClinicianTabs, { TAB_PATH, panelId, type ClinicianPage } from "@/components/clinicians/ClinicianTabs";
-import { SessionCard, useMinute } from "@/components/clinicians/GroupSessions";
+import { TAB_PATH, panelId, type ClinicianPage } from "@/components/clinicians/ClinicianTabs";
+import ColleagueProfile from "@/components/clinicians/ColleagueProfile";
 import MeetPage from "@/components/clinicians/MeetPage";
-import MyConsultations from "@/components/clinicians/MyConsultations";
 import { UrgentStart, UrgentStatus } from "@/components/clinicians/Urgent";
+import { Avatar, CONNECTION_FILTERS, ColleagueRow, connectionOf, matchesConnection, mutualOf, myConnections, sharedGroups, type ConnectionFilter } from "@/components/clinicians/network";
 import { hueStyle } from "@/components/clinicians/parts";
 import {
-  CLINICIAN_TYPES, CONSULTATION_MINUTES, WINDOW_HOURS, clinicianGroups, directoryFilters, directoryHref,
-  experienceText, freeSoon, groupPlace, hoursText, mainSection, nextFree, priceText, professionalTitle, upcomingSessions, type Clinician, type ClinicianType,
+  CLINICIAN_TYPES, clinicianGroups, directoryFilters, directoryHref, groupPlace, professionalTitle, type Clinician, type ClinicianType,
 } from "@/content/clinicians";
+import { personOfClinician } from "@/content/community-samples";
 import { librarySections } from "@/content/library";
-import { registerText, useClinicians } from "@/lib/clinician-portal";
-import { useCreatedSessions } from "@/lib/consultations";
+import { useClinicians } from "@/lib/clinician-portal";
+import { friendsHref, pendingRequestCount, useCommunity } from "@/lib/community-store";
+import { useMe } from "@/lib/me";
 import { todayLabel } from "./Welcome";
 import "./clinicians.css";
 
-// The Clinicians tab, from the design canvas "Rehyn Clinicians Tab". It is a nested route, like the Library, so the
-// paths below are relative to /clinicians. Finding a clinician, My consultations and the weekly group sessions are the
-// tab's three parts: one page with a row of tabs under the heading (ClinicianHub, ClinicianTabs) and "Need someone
-// urgently" beside it, the chosen part showing beneath the tabs:
-//   /                     find a clinician: the search band (search, condition areas and groups), filters and results;
-//                         ?area=…&group=… opens it already narrowed
-//   /consultations        the same page with My consultations showing: the patient's consultations and transcripts
+// The Clinicians tab of Rehyn Connect for clinicians: a professional network directory for finding and connecting with
+// other doctors and clinicians (browser comment 11), a little like LinkedIn's. It is a nested route, like the Library,
+// so the paths below are relative to /clinicians. Finding colleagues, My consultations and the weekly group sessions
+// are the tab's three parts: one page with a row of tabs under the heading (ClinicianHub, ClinicianTabs) and the
+// clinician's My network numbers beside it, the chosen part showing beneath the tabs:
+//   /                     find colleagues: search, condition expertise (the Library's sections and groups), filters
+//                         (connection, profession, location) and results; ?area=…&group=… opens it already narrowed
+//   /consultations        the same page with My consultations showing
 //   /sessions             the same page with the weekly group sessions showing
 //   /by-condition         browse by condition area (artboard 2)
-//   /urgent, /urgent/:id  an urgent consultation: alert every clinician free in the next 48 hours, then match
+//   /urgent, /urgent/:id  an urgent consultation (the patient edition's; no longer offered from the directory)
 //   /portal               the clinician portal (a preview: try it as one of the example clinicians)
 //   /meet/:room           the meeting room, for a consultation or a group session
-//   /:id                  a clinician's profile with "Book a consultation" (artboard 3)
-// Every consultation is online, by video on Rehyn. The people are examples (content/clinicians.ts), so requests, the
-// payment hold and transcripts stay on this device (lib/consultations.ts) and nothing is charged; the page says so.
+//   /:id                  a clinician's profile, with Connect (components/clinicians/ColleagueProfile.tsx); the
+//                         signed-in clinician's own shows as theirs, with a link to edit it in the portal
+// Connections are My Network's (lib/community-store.ts, components/clinicians/network.tsx), so the two always agree.
+// Patients' booking (prices, Book a consultation, urgent requests) isn't offered from the directory or the profiles.
+// The people are demo profiles (content/clinicians.ts), and what is done here stays on this device; the page says so.
 
 // ------------------------------------------------------------------------------------------------ the directory
 
 type Area = "all" | string;
-type Sort = "soonest" | "price" | "name";
+type Sort = "relevant" | "name" | "experience";
 
 const surname = (name: string) => name.replace(/^Dr\.? /, "");
 
+/**
+ * Find colleagues: search by name, title, workplace or condition; narrow by condition expertise (the Library's sections
+ * and groups), profession, location and where they stand with you in My Network. The signed-in clinician isn't listed
+ * (their own profile is the sidebar's "View your profile"), nor is anyone they have blocked.
+ */
 function Directory() {
   const start = directoryFilters(useSearch());
   const [area, setArea] = useState<Area>(start.area);
   const [groups, setGroups] = useState<string[]>(start.groups);
   const [types, setTypes] = useState<ClinicianType[]>([]);
-  const [soon, setSoon] = useState(false);
+  const [connection, setConnection] = useState<ConnectionFilter>("all");
+  const [place, setPlace] = useState("");
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState<Sort>("soonest");
+  const [sort, setSort] = useState<Sort>("relevant");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [now] = useState(() => new Date());
   const everyone = useClinicians();
+  const memory = useCommunity();
+  const me = useMe();
   const count = useRef<HTMLHeadingElement>(null);
   const section = librarySections.find(item => item.id === area);
   const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(item => item !== value) : [...list, value]);
   const pickArea = (id: Area) => { setArea(id); setGroups([]); };
-  const clearAll = () => { setArea("all"); setGroups([]); setTypes([]); setSoon(false); setQuery(""); };
+  const clearAll = () => { setArea("all"); setGroups([]); setTypes([]); setConnection("all"); setPlace(""); setQuery(""); };
 
-  const people = useMemo(() => {
+  // Everyone who could be listed, with where they stand with you, before the filters.
+  const colleagues = useMemo(() => everyone
+    .filter(person => person.listed !== false && person.id !== me.clinician.id)
+    .map(person => ({ person, status: connectionOf(memory, person, me).status }))
+    .filter(entry => entry.status !== "blocked"), [everyone, memory, me]);
+  const places = useMemo(() => colleagues.map(entry => entry.person.place).filter((item, index, list): item is string => !!item && list.indexOf(item) === index).sort(), [colleagues]);
+
+  const results = useMemo(() => {
     const words = query.trim().toLowerCase();
-    const first = (person: Clinician) => nextFree(person, now)?.getTime() ?? Infinity;
-    return everyone.filter(person => {
-      if (person.listed === false) return false;
-      const places = clinicianGroups(person);
-      if (area !== "all" && !places.some(place => place.section.id === area)) return false;
-      if (groups.length && !places.some(place => groups.includes(place.group.id))) return false;
+    const score = (person: Clinician) => {
+      const who = personOfClinician(person.id);
+      return (who ? mutualOf(memory, who, me).length * 2 : 0) + sharedGroups(person, me.clinician).length;
+    };
+    const rank = (status: string) => (status === "incoming" ? 0 : 1);
+    return colleagues.filter(({ person, status }) => {
+      const mine = clinicianGroups(person);
+      if (area !== "all" && !mine.some(item => item.section.id === area)) return false;
+      if (groups.length && !mine.some(item => groups.includes(item.group.id))) return false;
       if (types.length && !types.includes(person.type)) return false;
-      if (soon && !freeSoon(person, now)) return false;
+      if (place && person.place !== place) return false;
+      if (!matchesConnection(status, connection)) return false;
       if (words) {
-        const text = `${person.name} ${professionalTitle(person)} ${places.map(place => place.group.title).join(" ")}`.toLowerCase();
-        if (!text.includes(words)) return false;
+        const conditions = person.conditions.map(([groupId, conditionId]) => groupPlace(groupId)?.group.conditions.find(item => item.id === conditionId)?.title ?? "");
+        const type = CLINICIAN_TYPES.find(item => item.id === person.type)?.label ?? "";
+        const text = [person.name, professionalTitle(person), type, person.org, person.place, person.summary, ...mine.map(item => item.group.title), ...conditions, ...person.languages].join(" ").toLowerCase();
+        if (!words.split(/\s+/).every(word => text.includes(word))) return false;
       }
       return true;
-    }).sort((a, b) => (sort === "name" ? surname(a.name).localeCompare(surname(b.name)) : sort === "price" ? a.price - b.price : first(a) - first(b)));
-  }, [everyone, area, groups, types, soon, query, sort, now]);
+    }).sort((a, b) => {
+      if (sort === "name") return surname(a.person.name).localeCompare(surname(b.person.name));
+      if (sort === "experience") return b.person.years - a.person.years || surname(a.person.name).localeCompare(surname(b.person.name));
+      return rank(a.status) - rank(b.status) || score(b.person) - score(a.person) || surname(a.person.name).localeCompare(surname(b.person.name));
+    }).map(entry => entry.person);
+  }, [colleagues, area, groups, types, place, connection, query, sort, memory, me]);
 
+  const countFor = (filter: ConnectionFilter) => colleagues.filter(entry => matchesConnection(entry.status, filter)).length;
   const active: { label: string; remove: () => void }[] = [];
   if (section) active.push({ label: section.title, remove: () => pickArea("all") });
   for (const id of groups) active.push({ label: groupPlace(id)?.group.title ?? id, remove: () => setGroups(toggle(groups, id)) });
   for (const id of types) active.push({ label: CLINICIAN_TYPES.find(type => type.id === id)!.label, remove: () => setTypes(toggle(types, id)) });
-  if (soon) active.push({ label: `Free in the next ${WINDOW_HOURS} hours`, remove: () => setSoon(false) });
+  if (place) active.push({ label: place, remove: () => setPlace("") });
+  if (connection !== "all") active.push({ label: CONNECTION_FILTERS.find(item => item.id === connection)!.label, remove: () => setConnection("all") });
 
   return (
     <>
-      <h2 className="cl-sr">Find a clinician</h2>
-      {/* The search band: the main thing on the page. Filtering is live; Search takes you to the results. */}
-      <form className="cl-band" aria-label="Search" onSubmit={event => { event.preventDefault(); count.current?.focus(); count.current?.scrollIntoView({ block: "start", behavior: "smooth" }); }}>
-        <div className="cl-band-row">
-          <label className="cl-band-search">
-            <Search size={22} aria-hidden="true" />
+      <h2 className="cl-sr">Find colleagues</h2>
+      {/* The search: filtering is live; Search takes you to the results. */}
+      <form className="cx-card cn-search" aria-label="Search" onSubmit={event => { event.preventDefault(); count.current?.focus(); count.current?.scrollIntoView({ block: "start", behavior: "smooth" }); }}>
+        <div className="cn-search-row">
+          <label className="cn-search-box">
+            <Search size={20} aria-hidden="true" />
             <span className="cl-sr">Search clinicians</span>
-            <input type="search" placeholder="Search by name, condition or speciality, e.g. stroke, physiotherapist" value={query} onChange={event => setQuery(event.target.value)} />
+            <input type="search" placeholder="Search by name, specialty, workplace or condition" value={query} onChange={event => setQuery(event.target.value)} />
           </label>
-          <button type="submit" className="cl-band-go">Search</button>
+          <button type="submit" className="cx-btn cx-btn-primary cn-search-go">Search</button>
         </div>
-        <div className="cl-band-areas" role="group" aria-label="Condition area">
-          <span className="cl-label">Condition area</span>
-          <button type="button" className="cl-area-pill" aria-pressed={area === "all"} style={hueStyle({ tint: "#EFF1EB", ink: "#285B49" })} onClick={() => pickArea("all")}>
-            <span className="cl-area-dot" aria-hidden="true" />All areas
-          </button>
+        <div className="cn-chiprow" role="group" aria-label="Condition expertise">
+          <span className="cn-chiprow-label">Condition expertise</span>
+          <button type="button" className="cn-filter-chip" aria-pressed={area === "all"} onClick={() => pickArea("all")}>All areas</button>
           {librarySections.map(item => (
-            <button key={item.id} type="button" className="cl-area-pill" aria-pressed={area === item.id} style={hueStyle(item.hue)} onClick={() => pickArea(item.id)}>
-              <span className="cl-area-dot" aria-hidden="true" />{item.title}
-            </button>
+            <button key={item.id} type="button" className="cn-filter-chip" aria-pressed={area === item.id} onClick={() => pickArea(item.id)}>{item.title}</button>
           ))}
         </div>
         {section && (
-          <div className="cl-band-groups" style={hueStyle(section.hue)} role="group" aria-label={`Within ${section.title}`}>
-            <p className="cl-groups-title">Within {section.title}</p>
+          <div className="cn-chiprow is-sub" role="group" aria-label={`Within ${section.title}`}>
+            <span className="cn-chiprow-label">Within {section.title}</span>
             {section.groups.map(group => (
-              <button key={group.id} type="button" className="cl-group-chip" aria-pressed={groups.includes(group.id)} onClick={() => setGroups(toggle(groups, group.id))}>{group.title}</button>
+              <button key={group.id} type="button" className="cn-filter-chip" aria-pressed={groups.includes(group.id)} onClick={() => setGroups(toggle(groups, group.id))}>{group.title}</button>
             ))}
           </div>
         )}
       </form>
 
-      <div className="cl-layout">
-        <aside className={`cl-filters ${filtersOpen ? "is-open" : ""}`} aria-label="Filters">
+      <div className="cn-layout">
+        <aside className={`cx-card cn-filters ${filtersOpen ? "is-open" : ""}`} aria-label="Filters">
           {/* On a phone the filters fold away under this button, so the results come first. */}
-          <button type="button" className="cl-filters-toggle" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>
+          <button type="button" className="cn-filters-toggle" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>
             <SlidersHorizontal size={18} aria-hidden="true" /><span>{filtersOpen ? "Hide filters" : "Filters"}</span>
-            {active.length > 0 && <span className="cl-filters-count">{active.length}<span className="cl-sr"> on</span></span>}
+            {active.length > 0 && <span className="cn-filters-count">{active.length}<span className="cl-sr"> on</span></span>}
           </button>
-          <fieldset className="cl-fieldset">
-            <legend className="cl-label">Type of clinician</legend>
+          <fieldset className="cn-fieldset">
+            <legend className="cn-legend">Connection</legend>
+            {CONNECTION_FILTERS.map(item => (
+              <label key={item.id} className="cn-option">
+                <input type="radio" name="cn-connection" checked={connection === item.id} onChange={() => setConnection(item.id)} />{item.label}
+                <span className="cn-option-count">{countFor(item.id)}</span>
+              </label>
+            ))}
+          </fieldset>
+          <div className="cn-rule" />
+          <fieldset className="cn-fieldset">
+            <legend className="cn-legend">Profession</legend>
             {CLINICIAN_TYPES.map(type => (
-              <label key={type.id} className="cl-check">
+              <label key={type.id} className="cn-option">
                 <input type="checkbox" checked={types.includes(type.id)} onChange={() => setTypes(toggle(types, type.id))} />{type.label}
               </label>
             ))}
           </fieldset>
-          <div className="cl-rule" />
-          <label className="cl-check">
-            <input type="checkbox" checked={soon} onChange={() => setSoon(!soon)} />Free in the next {WINDOW_HOURS} hours
-          </label>
+          {places.length > 1 && (
+            <>
+              <div className="cn-rule" />
+              <label className="cn-fieldset">
+                <span className="cn-legend">Location</span>
+                <select className="cn-select" value={place} onChange={event => setPlace(event.target.value)}>
+                  <option value="">Anywhere</option>
+                  {places.map(item => <option key={item} value={item}>{item}</option>)}
+                </select>
+              </label>
+            </>
+          )}
         </aside>
 
-        <section className="cl-results" aria-label="Results">
-          <div className="cl-results-head">
-            <h2 ref={count} tabIndex={-1} className="cl-count" aria-live="polite">{people.length} {people.length === 1 ? "clinician" : "clinicians"}{section && <span className="cl-count-for"> for {(groups.length === 1 ? groupPlace(groups[0])?.group.title : undefined) ?? section.title}</span>}</h2>
-            <label className="cl-sort">Sort by
-              <select value={sort} onChange={event => setSort(event.target.value as Sort)}>
-                <option value="soonest">Soonest available</option>
-                <option value="price">Price, lowest first</option>
+        <section className="cn-results" aria-label="Results">
+          <div className="cn-results-head">
+            <h2 ref={count} tabIndex={-1} className="cn-count" aria-live="polite">{results.length} {results.length === 1 ? "clinician" : "clinicians"}{section && <span className="cn-count-for"> in {(groups.length === 1 ? groupPlace(groups[0])?.group.title : undefined) ?? section.title}</span>}</h2>
+            <label className="cn-sort">Sort by
+              <select className="cn-select" value={sort} onChange={event => setSort(event.target.value as Sort)}>
+                <option value="relevant">Most relevant</option>
                 <option value="name">Name A–Z</option>
+                <option value="experience">Most experience</option>
               </select>
             </label>
           </div>
 
           {active.length > 0 && (
-            <div className="cl-active">
+            <div className="cn-active">
               {active.map(item => (
-                <button key={item.label} type="button" className="cl-active-chip" onClick={item.remove} aria-label={`Remove filter ${item.label}`}>{item.label}<X size={14} aria-hidden="true" /></button>
+                <button key={item.label} type="button" className="cn-active-chip" onClick={item.remove} aria-label={`Remove filter ${item.label}`}>{item.label}<X size={14} aria-hidden="true" /></button>
               ))}
-              <button type="button" className="cl-clear" onClick={clearAll}>Clear all</button>
+              <button type="button" className="cn-clear" onClick={clearAll}>Clear all</button>
             </div>
           )}
 
-          {people.length === 0 ? (
-            <div className="cl-empty">
-              <p className="cl-empty-title">No clinicians match all of these yet</p>
-              <p>Try removing a filter.</p>
-              <button type="button" className="cl-btn" onClick={clearAll}>Clear filters</button>
+          {results.length === 0 ? (
+            <div className="cx-card cn-empty">
+              <p className="cn-empty-title">No colleagues match all of these</p>
+              <p>Try a different search, or remove a filter.</p>
+              <button type="button" className="cx-btn" onClick={clearAll}>Clear filters</button>
             </div>
           ) : (
-            <div className="cl-grid">
-              {people.map(person => <ClinicianCard key={person.id} clinician={person} now={now} />)}
-            </div>
+            <ul className="cx-card cn-list" aria-label="Clinicians">
+              {results.map(person => <ColleagueRow key={person.id} clinician={person} me={me} memory={memory} />)}
+            </ul>
           )}
 
-          <p className="cl-note">Rehyn helps you find people to talk to. It does not replace your GP or your hospital team. If something feels urgent, call 999. The clinicians, prices and experience shown are examples while the directory is being set up.</p>
+          <p className="cn-footnote">These are demo profiles: example clinicians while the network is being set up. Connections, invitations and messages stay on this device, and are the same here and in <Link href={`~${friendsHref("friends")}`} className="cn-link">My network</Link>.</p>
         </section>
-      </div>
-    </>
-  );
-}
-
-// ------------------------------------------------------------------------------------------- weekly group sessions
-
-/** The weekly group sessions, shown beneath the tabs: every upcoming session, and how sessions work. */
-function Sessions() {
-  const now = useMinute();
-  useClinicians();
-  const sessions = upcomingSessions(useCreatedSessions(), new Date(now));
-  return (
-    <>
-      <h2 className="cl-sr">Weekly group sessions</h2>
-      <p className="cl-tab-intro">Open sessions where a clinician answers questions from everyone who joins. Listen in with your camera off, or ask your own. Save a place and the room opens here ten minutes before.</p>
-      <div className="cl-sessions-layout">
-        <section className="cl-sessions-main" aria-label="Sessions">
-          {sessions.length === 0
-            ? <div className="cl-empty"><p className="cl-empty-title">No sessions are planned yet</p><p>Clinicians set them up in their portal. Check back soon.</p></div>
-            : <div className="cl-session-grid">{sessions.map(session => <SessionCard key={session.id} session={session} now={now} />)}</div>}
-        </section>
-        <aside className="cl-sessions-aside" aria-label="About the sessions">
-          <section className="cl-panel">
-            <h2 className="cl-h2">How sessions work</h2>
-            <ul className="cl-help">
-              <li><Check size={18} aria-hidden="true" />Open to everyone on Rehyn; many are free, and each shows its price</li>
-              <li><Check size={18} aria-hidden="true" />Keep your camera off if you prefer; only the host is on screen</li>
-              <li><Check size={18} aria-hidden="true" />Send a question in advance; the host sees it without your name</li>
-              <li><Check size={18} aria-hidden="true" />The room opens here ten minutes before the start</li>
-              <li><Check size={18} aria-hidden="true" />General answers only; book a consultation for your own situation</li>
-            </ul>
-          </section>
-          <section className="cl-panel is-tinted">
-            <p className="cl-label">Like what you hear?</p>
-            <p className="cl-small">Every host also offers private {CONSULTATION_MINUTES}-minute consultations. Their profile has a Book button.</p>
-            <Link href="/" className="cl-text-link">Find a clinician →</Link>
-          </section>
-          <p className="cl-note">Sessions are general information, not advice about you. If something feels urgent, call 999.</p>
-        </aside>
       </div>
     </>
   );
@@ -236,22 +238,32 @@ function ClinicianHub({ page }: { page: ClinicianPage }) {
   const panel = (which: ClinicianPage, body: ReactNode) => (
     <div id={panelId(which)} className="cl-tab-panel" hidden={page !== which}>{body}</div>
   );
+  const memory = useCommunity();
+  const me = useMe();
+  const connections = myConnections(memory, me).length;
+  const invitations = pendingRequestCount(memory);
   return (
-    <div className="cl-page">
-      <div className="cl-head">
-        <div>
-          <p className="cl-kicker"><span aria-hidden="true" />Care that fits you</p>
-          <h1 className="cl-h1" data-page-heading>Clinicians<span aria-hidden="true">.</span></h1>
-          <p className="cl-lead">Talk to a clinician who knows your condition, by video from home, often within 48 hours.</p>
+    <div className="cl-page cn-page">
+      <div className="cn-head">
+        <div className="cn-head-text">
+          <p className="cx-kicker">Professional network</p>
+          <h1 className="cn-h1" data-page-heading>Clinicians</h1>
+          <p className="cn-lead">Find doctors, therapists, nurses and other clinicians by name, specialty or the conditions they work with. View their profiles and connect to grow your professional network.</p>
         </div>
-        <Link href="/urgent" className="cl-urgent-btn"><Clock size={18} aria-hidden="true" />Need someone urgently</Link>
+        {/* My Network's own numbers: the directory and My Network share one connection state. */}
+        <Link href={`~${friendsHref(invitations > 0 ? "requests" : "friends")}`} className="cx-card cn-net">
+          <Avatar clinician={me.clinician} size={44} />
+          <span className="cn-net-text">
+            <strong>My network</strong>
+            <span>{connections} {connections === 1 ? "connection" : "connections"}{invitations > 0 && <> · <span className="cn-net-count">{invitations} {invitations === 1 ? "invitation" : "invitations"}</span></>}</span>
+          </span>
+          <ArrowRight size={18} aria-hidden="true" />
+        </Link>
       </div>
 
-      <ClinicianTabs active={page} />
-
+      {/* For clinicians the directory stands alone: their consultations and weekly patient sessions have their own
+          destinations (the portal and Group weekly sessions), so the patient edition's tabs aren't shown here. */}
       {panel("find", <Directory />)}
-      {panel("consultations", <MyConsultations />)}
-      {panel("sessions", <Sessions />)}
     </div>
   );
 }
@@ -309,85 +321,19 @@ function ByCondition() {
 
 // -------------------------------------------------------------------------------------------------- the profile
 
-function Profile({ clinician }: { clinician: Clinician }) {
-  const section = mainSection(clinician);
-  return (
-    <div className="cl-page">
-      <Link href="/" className="cl-back"><ArrowLeft size={18} aria-hidden="true" />Back to clinicians</Link>
-      <div className="cl-profile">
-        <div className="cl-profile-main">
-          <section className="cl-hero" style={hueStyle(section.hue)}>
-            <span className="cl-hero-avatar" aria-hidden="true">{clinician.initials}</span>
-            <div className="cl-hero-text">
-              <p className="cl-hero-kicker">{section.title}</p>
-              <h1 className="cl-hero-name" data-page-heading>{clinician.name}</h1>
-              <p className="cl-hero-role">{professionalTitle(clinician)}</p>
-              <div className="cl-hero-pills">
-                <span className={`cl-pill ${clinician.own && !clinician.verified ? "is-pending" : "is-ok"}`}><ShieldCheck size={14} aria-hidden="true" />{registerText(clinician)}</span>
-                <span className="cl-pill"><Check size={14} aria-hidden="true" />{experienceText(clinician)}</span>
-                <span className="cl-pill"><Video size={14} aria-hidden="true" />{hoursText(clinician)}</span>
-                <span className="cl-pill"><Globe size={14} aria-hidden="true" />{clinician.languages.join(", ")}</span>
-              </div>
-            </div>
-            <div className="cl-hero-side">
-              <p className="cl-price is-big"><strong>{priceText(clinician.price)}</strong><span>per consultation</span></p>
-              <SaveButton clinician={clinician} labelled />
-            </div>
-          </section>
-
-          <div className="cl-two">
-            <section className="cl-panel">
-              <h2 className="cl-h2">Conditions I work with</h2>
-              <div className="cl-chips">
-                {clinician.conditions.map(([groupId, conditionId]) => {
-                  const place = groupPlace(groupId);
-                  const condition = place?.group.conditions.find(item => item.id === conditionId);
-                  if (!place || !condition) return null;
-                  return <Link key={`${groupId}/${conditionId}`} href={`~/library/${groupId}/${conditionId}`} className="cl-chip is-link" style={hueStyle(place.section.hue)}>{condition.title}</Link>;
-                })}
-              </div>
-              <p className="cl-small">Tap a condition to read about it in the Library.</p>
-            </section>
-            {clinician.help.length > 0 && (
-              <section className="cl-panel">
-                <h2 className="cl-h2">How I can help</h2>
-                <ul className="cl-help">
-                  {clinician.help.map(line => <li key={line}><Check size={18} aria-hidden="true" />{line}</li>)}
-                </ul>
-              </section>
-            )}
-          </div>
-
-          <section className="cl-panel is-soft">
-            <h2 className="cl-h2">About {clinician.first}</h2>
-            <p className="cl-about">{clinician.about}</p>
-            <div className="cl-tags">
-              <span>Video on Rehyn</span>
-              <span>{CONSULTATION_MINUTES}-minute consultations</span>
-              <span>Payment held until the consultation is finished</span>
-              <span>Transcript saved for you both</span>
-            </div>
-          </section>
-        </div>
-
-        <BookConsultation key={clinician.id} clinician={clinician} />
-      </div>
-    </div>
-  );
-}
-
-/** A profile by its address, kept up to date with changes made in the portal on this device. */
+/** A profile by its address, kept up to date with changes made in the portal on this device. The signed-in clinician's
+ *  own address (the sidebar's "View your profile") shows it as theirs. */
 function ProfileRoute({ id }: { id: string }) {
   const clinician = useClinicians().find(item => item.id === id);
-  return clinician ? <Profile key={clinician.id} clinician={clinician} /> : <Missing />;
+  return clinician ? <ColleagueProfile key={clinician.id} clinician={clinician} /> : <Missing />;
 }
 
 function Missing() {
   return (
-    <div className="cl-page cl-missing">
-      <h1 className="cl-h1">We couldn't find that clinician</h1>
-      <p className="cl-lead">They may have moved, or the link may be out of date.</p>
-      <Link href="/" className="cl-btn">Back to clinicians</Link>
+    <div className="cl-page cn-page cl-missing">
+      <h1 className="cn-h1">We couldn't find that clinician</h1>
+      <p className="cn-lead">They may have moved, or the link may be out of date.</p>
+      <Link href="/" className="cx-btn cx-btn-primary">Back to the directory</Link>
     </div>
   );
 }
@@ -412,6 +358,9 @@ export default function Clinicians() {
   useScrollOnArrival();
   const [location] = useLocation();
   const page = hubPage(location);
+  // The patient edition's My consultations and session listing lead to the clinician's own destinations here.
+  if (page === "consultations") return <Redirect to="~/clinicians/portal/consultations" replace />;
+  if (page === "sessions") return <Redirect to="~/community?space=circle" replace />;
   return (
     <RecoveryShell active="Clinicians" dateLabel={todayLabel()} className="clinicians-shell" panel={false}>
       {page ? <ClinicianHub page={page} /> : (

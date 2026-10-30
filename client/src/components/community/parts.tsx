@@ -3,6 +3,7 @@ import { Link, useSearch } from "wouter";
 import { artUrl, monogramTone, pictureArt, type PictureLook } from "@/content/community-pictures";
 import { isPersonId, members, myDrawnFace, people, reactionLabels, type GroupCover, type GroupMessage, type MemberId, type PersonId, type PictureChoice, type QuickTone, type ReactionKind } from "@/content/community-samples";
 import { communityStore, communityViewFromQuery, friendsHref, placeOf, preparePostPhoto, relationship, useCommunity, type NoteDraft, type OwnNote } from "@/lib/community-store";
+import { useMe } from "@/lib/me";
 import { profileInitial, useProfile } from "@/lib/profile";
 import type { Burst } from "./hooks";
 import { useVoiceNote, voiceSeconds } from "./hooks";
@@ -31,6 +32,13 @@ export function MemberFace({ who, size = 40, className = "", style }: { who: Mem
 export function MyFace({ size = 40, className = "", style, picture, look }: { size?: number; className?: string; style?: CSSProperties; picture?: PictureChoice; look?: PictureLook }) {
   const profile = useProfile();
   const settings = useCommunity().settings;
+  const me = useMe();
+  // Rehyn Connect for clinicians: the signed-in clinician's own portrait (or initials) everywhere, from their profile
+  // (comment 21). Settings can still preview another picture choice.
+  if (!picture) {
+    if (me.photo) return <span className={`cm-face ${className}`} style={{ width: size, height: size, backgroundImage: `url("${me.photo}")`, ...style }} aria-hidden="true" />;
+    return <span className={`cm-face cm-face-initial ${className}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.4), fontWeight: 700, backgroundColor: "#E4E7EA", color: "#27323D", ...style }} aria-hidden="true">{me.initials}</span>;
+  }
   const kind = picture ?? settings.picture;
   const chosen = look ?? settings.look;
   if (kind === "drawn") return <span className={`cm-face ${className}`} style={{ width: size, height: size, backgroundColor: myDrawnFace.tint, backgroundImage: `url("${myDrawnFace.face}")`, ...style }} aria-hidden="true" />;
@@ -114,18 +122,18 @@ export function FriendButton({ who, className = "", onLeave }: { who: PersonId; 
   const status = relationship(memory, who);
   const name = people[who].name;
   if (status === "blocked") return null;
-  if (status === "friend") return <span className={`cm-friend is-friend ${className}`}><CheckIcon size={15} />Friends<span className="cm-sr">{` with ${name}`}</span></span>;
+  if (status === "friend") return <span className={`cm-friend is-friend ${className}`}><CheckIcon size={15} />Connected<span className="cm-sr">{` with ${name}`}</span></span>;
   if (status === "incoming") {
     return (
       <Link className={`cm-friend is-asking ${className}`} href={friendsHref("requests", placeOf(communityViewFromQuery(search)))} onClick={onLeave}>
-        Wants to be friends<span className="cm-sr">{`: see ${name}'s request`}</span>
+        Wants to connect<span className="cm-sr">{`: see ${name}'s invitation`}</span>
       </Link>
     );
   }
   const on = status === "sent";
   return (
     <button type="button" className={`cm-friend ${on ? "is-on" : ""} ${className}`} onClick={() => (on ? communityStore.cancelRequest(who) : communityStore.requestFriend(who))}>
-      {on ? "Request sent" : "Add friend"}<span className="cm-sr">{on ? ` to ${name}. Press to cancel it` : ` (${name})`}</span>
+      {on ? "Pending" : "Connect"}<span className="cm-sr">{on ? `: your request to ${name}. Press to withdraw it` : ` with ${name}`}</span>
     </button>
   );
 }

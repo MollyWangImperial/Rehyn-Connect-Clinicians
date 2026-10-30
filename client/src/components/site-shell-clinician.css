@@ -1,0 +1,57 @@
+/* Rehyn Connect for clinicians: the shell in the edition's professional look (clinician-edition.css tokens).
+   Neutral page, white bar, small radii; "for clinicians" sits under the brand on its own line (comment 3). */
+
+.recovery-shell.site-shell { background: var(--cx-canvas); }
+.site-top { border-bottom-color: var(--cx-line); }
+
+.site-brand { border-radius: var(--cx-radius); color: var(--cx-ink); }
+.site-brand-mark { border-radius: var(--cx-radius-lg); background: #183d34; box-shadow: none; }
+.site-brand-words { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.site-brand-name em { color: var(--cx-accent); }
+.site-brand-edition {
+  padding: 2px 6px; border: 1px solid var(--cx-line-strong); border-radius: 4px; color: var(--cx-muted);
+  font: 700 10.5px/1.2 var(--cx-font); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+}
+
+.site-tab { border-radius: var(--cx-radius); color: var(--cx-muted); }
+.site-tab:hover { background: var(--cx-subtle); color: var(--cx-ink); }
+.site-tab.is-active { color: var(--cx-ink); }
+.site-tab.is-active::after { background: var(--cx-ink); }
+.site-tab-count { background: var(--cx-danger); }
+.site-settings { border-color: var(--cx-line); border-radius: var(--cx-radius); color: var(--cx-ink); }
+.site-settings:hover { border-color: var(--cx-line-strong); background: var(--cx-subtle); }
+.site-menu { border-radius: var(--cx-radius) !important; }
+
+/* The panel: one white card for "you", quiet rows. */
+.site-me { padding: 14px 8px 8px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); background: var(--cx-surface); }
+.site-me-face { background-color: var(--cx-subtle); background-position: center; background-size: cover; color: var(--cx-ink); }
+.site-me-words b { color: var(--cx-ink); }
+.site-me-title { overflow: hidden; max-width: 100%; color: var(--cx-muted); font-size: 12.5px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.site-me-link { color: var(--cx-accent); font-weight: 600; text-decoration: none; }
+.site-me-link:hover { text-decoration: underline; }
+.site-row { border-radius: var(--cx-radius); }
+.site-row:hover, .site-row.is-active, .site-row[aria-expanded="true"] { background: var(--cx-subtle); }
+.site-row-icon { border-radius: var(--cx-radius); background: var(--cx-subtle); color: var(--cx-muted); }
+.site-row:hover .site-row-icon, .site-row.is-active .site-row-icon { color: var(--cx-ink); }
+.site-row-badge { border-radius: 4px; background: var(--cx-accent); }
+.site-caption { color: var(--cx-muted); }
+.site-see-all { color: var(--cx-accent); text-decoration: none; }
+.site-see-all:hover { text-decoration: underline; }
+.site-group { border-radius: var(--cx-radius); }
+.site-group:hover { background: var(--cx-subtle); }
+.site-group-tile { border-radius: var(--cx-radius); background: #E4E7EA; color: #27323D; font-family: var(--cx-font); }
+.site-group.is-more { color: var(--cx-accent); }
+.site-group.is-more .site-group-tile { border-color: var(--cx-line-strong); color: var(--cx-accent); }
+.site-group-dot { background: var(--cx-accent); }
+
+@media (max-width: 1179px) {
+  .site-panel { background: var(--cx-canvas); }
+}
+@media (max-width: 480px) {
+  /* On a phone the brand keeps "Connect" and its edition label; Settings shrinks to its icon to make room. */
+  .site-brand-name { font-size: 18px; }
+  .site-brand-name em { display: inline; }
+  .site-brand-edition { font-size: 9.5px; }
+  .site-settings { width: 44px; padding: 0; justify-content: center; }
+  .site-settings span { display: none; }
+}

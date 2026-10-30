@@ -1,0 +1,49 @@
+/* Rehyn Connect for clinicians: the shared professional look (brief: restrained palette, neutral surfaces, one
+   accent, subtle rectangular corners, minimal functional motion). Every clinician view uses these tokens, so the
+   composer, groups, weekly sessions, Messages and the directory read as one system. */
+:root {
+  --cx-canvas: #F3F2EF;
+  --cx-surface: #FFFFFF;
+  --cx-subtle: #F6F7F8;
+  --cx-line: #DCDFE3;
+  --cx-line-strong: #C3C8CE;
+  --cx-ink: #1D2226;
+  --cx-muted: #5B636B;
+  --cx-faint: #858C94;
+  --cx-accent: #0B5C8E;
+  --cx-accent-hover: #084A73;
+  --cx-accent-soft: #E7F0F7;
+  --cx-ok: #1F6E46;
+  --cx-ok-soft: #E6F2EB;
+  --cx-warn: #8A5A00;
+  --cx-warn-soft: #FBF1DC;
+  --cx-danger: #A23B2A;
+  --cx-radius: 6px;
+  --cx-radius-lg: 8px;
+  --cx-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --cx-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Shared building blocks for the clinician views. */
+.cx-card { background: var(--cx-surface); border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); box-shadow: var(--cx-shadow); }
+.cx-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 14px;
+  border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius); background: var(--cx-surface); color: var(--cx-ink);
+  font: 600 14px/1 var(--cx-font); cursor: pointer; text-decoration: none; transition: background-color 0.12s, border-color 0.12s;
+}
+.cx-btn:hover { background: var(--cx-subtle); border-color: var(--cx-muted); }
+.cx-btn:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
+.cx-btn-primary { background: var(--cx-accent); border-color: var(--cx-accent); color: #fff; }
+.cx-btn-primary:hover { background: var(--cx-accent-hover); border-color: var(--cx-accent-hover); }
+.cx-btn-quiet { border-color: transparent; background: transparent; color: var(--cx-muted); }
+.cx-btn-quiet:hover { background: var(--cx-subtle); border-color: transparent; color: var(--cx-ink); }
+.cx-btn[disabled], .cx-btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
+.cx-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: var(--cx-subtle); color: var(--cx-muted); font: 600 12px/1.6 var(--cx-font); }
+.cx-pill.is-live { background: var(--cx-ok-soft); color: var(--cx-ok); }
+.cx-pill.is-accent { background: var(--cx-accent-soft); color: var(--cx-accent); }
+.cx-avatar { flex: none; border-radius: 50%; object-fit: cover; background: var(--cx-subtle); color: var(--cx-muted); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; overflow: hidden; }
+.cx-kicker { margin: 0; color: var(--cx-muted); font: 600 12px/1.4 var(--cx-font); letter-spacing: 0.04em; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-btn { transition: none; }
+}

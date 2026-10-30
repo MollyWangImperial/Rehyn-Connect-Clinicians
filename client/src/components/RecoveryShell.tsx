@@ -12,6 +12,7 @@ import { alertsPanel, useAlertsPanel } from "@/lib/alerts-panel";
 import { communityViewFromQuery, placeOf } from "@/lib/community-store";
 import { useDisplayPrefs } from "@/lib/display-prefs";
 import "./site-shell.css";
+import "./site-shell-clinician.css";
 
 type ViewName = "Library" | "Clinicians" | "My Community" | "Care Team";
 
@@ -81,9 +82,13 @@ export default function RecoveryShell({ active, children, dateLabel = "THURSDAY,
               {drawer ? <X size={20} /> : <Menu size={20} />}
             </button>
           )}
-          <button type="button" className="site-brand" onClick={() => navigate("~/community")} aria-label="Rehyn: Connect, go to the Feed">
+          {/* The clinician edition says so under the brand, on its own line, at every width (comment 3). */}
+          <button type="button" className="site-brand" onClick={() => navigate("~/community")} aria-label="Rehyn: Connect for clinicians, go to the Feed">
             <span className="site-brand-mark"><HeartRateMark size={22} /></span>
-            <span className="site-brand-name">Rehyn<em>: Connect</em></span>
+            <span className="site-brand-words">
+              <span className="site-brand-name">Rehyn<em>: Connect</em></span>
+              <span className="site-brand-edition">for clinicians</span>
+            </span>
           </button>
         </div>
         {!portal && <SiteTabs here={loungeHere} />}

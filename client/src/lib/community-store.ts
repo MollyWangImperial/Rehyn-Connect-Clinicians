@@ -74,8 +74,10 @@ import { readBattleshipsSave, type BattleshipsSave } from "@/components/communit
 
 /* ------------------------------------------------------------------ views */
 
-export type CommunitySpace = "feed" | "lounge" | "circle" | "groups" | "messages" | "friends" | "start" | "settings" | "safety" | "poker";
-const namedSpaces: CommunitySpace[] = ["lounge", "circle", "groups", "messages", "friends", "start", "settings", "safety", "poker"];
+export type CommunitySpace = "feed" | "lounge" | "circle" | "events" | "groups" | "messages" | "friends" | "start" | "settings" | "safety" | "poker";
+// The lounge is gone (comment 12) and the clinician edition has no poker night: their old addresses
+// (?space=lounge, ?space=poker) are not named spaces any more, so they open the feed instead.
+const namedSpaces: CommunitySpace[] = ["circle", "events", "groups", "messages", "friends", "start", "settings", "safety"];
 /** Something that opens over a view. Only the Friends drawer has an address of its own. */
 export type CommunityPanel = "friends";
 /**
@@ -104,16 +106,17 @@ const isConditionId = (value: unknown): value is ConditionId => typeof value ===
 /**
  * Which view a link points at:
  *   /community                                   the feed
- *   /community?space=lounge                      the lounge
- *   /community?space=circle                      the Sunday circle
+ *   /community?space=lounge, ?space=poker        retired: they open the feed
+ *   /community?space=circle                      group weekly sessions
+ *   /community?space=events                      my professional events
  *   /community?space=groups                      groups by condition (the person's own condition)
  *   /community?space=groups&cond=ms              groups by condition, inside Multiple sclerosis
  *   /community?space=groups&group=walk           my groups, with one of them open
- *   /community?space=groups&group=garden&game=margaret-chess   a game in a group (game=new: start one)
+ *   /community?space=groups&group=garden&game=hannah-chess   a game in a group (game=new: start one)
  *   /community?space=groups&game=new-open        Play now: a game with someone new, outside any group
  *   /community?space=groups&game=game-…          one of those Play now games
  *   /community?space=start&cond=stroke           starting a group inside a condition
- *   /community?space=messages&chat=margaret      messages, with a conversation open
+ *   /community?space=messages&chat=hannah      messages, with a conversation open
  *   /community?space=friends                     friends: requests, friends, privacy and blocked
  *   /community?space=start                       starting a group
  *   /community?space=settings                    community settings
@@ -232,7 +235,7 @@ export type GroupGame = { id: string; groupId: string; type: GameId; players: Pe
 /** The `groupId` of a Play now game: it belongs to no group, so it never shows in one. */
 export const OPEN_GAMES = "open";
 /** Who Play now matches the person with, in order of preference: the first not blocked. */
-const OPEN_PLAYERS: PersonId[] = ["priya", "samuel", "david", "tomasz", "liwei", "anne", "margaret", "joan"];
+const OPEN_PLAYERS: PersonId[] = ["priya", "joseph", "kwame", "tomas", "michael", "grace", "hannah", "ruth"];
 
 export type RequestAnswer = "accepted" | "declined";
 /** A report the person made. It is kept on this device; in this preview it is not sent anywhere. */
@@ -346,7 +349,7 @@ export const LIMITS = { games: 20, chessMoves: 600, posts: 40, notes: 60, starte
 
 /** A like or a dislike on a comment. */
 export type CommentVote = "like" | "dislike";
-/** A comment's key for its vote: the post, then the comment ("p-margaret/c2", "post-…/reply-…", "daily-2026-10-12/reply-…"). */
+/** A comment's key for its vote: the post, then the comment ("p-hannah/c2", "post-…/reply-…", "daily-2026-10-12/reply-…"). */
 export const commentKey = (postId: string, commentId: string) => `${postId}/${commentId}`;
 const isCommentKey = (value: unknown): value is string => {
   if (typeof value !== "string") return false;
@@ -1212,7 +1215,7 @@ export type FriendEntry = { who: PersonId; status: string; online: boolean; isNe
 export function friendList(memory: CommunityMemory): FriendEntry[] {
   const list: FriendEntry[] = startFriends.filter(friend => !isBlocked(memory, friend.who)).map(friend => ({ ...friend, isNew: false }));
   incomingRequests.forEach(request => {
-    if (relationship(memory, request.who) === "friend") list.push({ who: request.who, status: "New friend", online: false, isNew: true });
+    if (relationship(memory, request.who) === "friend") list.push({ who: request.who, status: "New connection", online: false, isNew: true });
   });
   return list;
 }

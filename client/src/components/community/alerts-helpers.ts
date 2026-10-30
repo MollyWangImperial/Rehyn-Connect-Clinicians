@@ -161,7 +161,7 @@ const squash = (folded: string) => folded.replace(SEPARATORS_ALL, "");
 
 /**
  * How well a name (and some other words about it) matches what was typed, best first:
- *   0  the name starts with it ("mar" finds Margaret; "liwei" finds Li Wei)
+ *   0  the name starts with it ("mar" finds Margaret; "michael" finds Li Wei)
  *   1  every word is in the name, and the first starts one of its words ("gang" finds Garden gang)
  *   2  every word is somewhere in the name
  *   3  every word is in the name or the other words (a town, a note about the place)
@@ -235,7 +235,6 @@ export function communityPlaces(memory: CommunityMemory, over: CommunityPlace): 
   const letters = unreadMessages(memory);
   return [
     { id: "feed", label: "Feed", note: "Posts from everyone", href: communityHref(), words: ["feed", "posts", "home", "news", "write", "share"], browse: true, space: "feed" },
-    { id: "lounge", label: "The lounge", note: "Drop in for a chat", href: communityHref("lounge"), words: ["lounge", "chat", "talk", "live", "tea", "poll"], browse: true, space: "lounge" },
     { id: "circle", label: "Sunday circle", note: memory.seated ? "You have your seat" : "Open now", href: communityHref("circle"), words: ["circle", "sunday", "teacup", "seat", "share", "talk"], browse: true, space: "circle" },
     { id: "groups", label: "My groups", note: unread ? count(unread, "unread message", "unread messages") : "Your group chats", href: communityHref("groups"), words: ["groups", "group", "chats", "messages", "challenge"], browse: true, space: "groups" },
     { id: "messages", label: "Messages", note: letters ? `${count(letters, "conversation", "conversations")} waiting` : "Messages with friends", href: communityHref("messages"), words: ["messages", "message", "inbox", "write", "reply", "private"], browse: true, space: "messages" },

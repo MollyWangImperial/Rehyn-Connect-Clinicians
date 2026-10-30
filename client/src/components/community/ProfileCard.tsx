@@ -59,7 +59,7 @@ export default function ProfileCard({ onChangePicture, onSaved }: { onChangePict
           <button type="button" className="cm-btn cm-btn-green cm-pic-change" aria-haspopup="dialog" onClick={event => onChangePicture?.(event.currentTarget)}>
             <CameraIcon size={22} />Change picture
           </button>
-          <p className="cm-pic-picture-hint">Your picture on your posts, in groups and in the lounge.</p>
+          <p className="cm-pic-picture-hint">Your picture on your posts, in groups and in messages.</p>
         </div>
 
         <form className="cm-pic-form" onSubmit={save} noValidate>

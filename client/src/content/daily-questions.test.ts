@@ -38,6 +38,6 @@ describe("the Daily question", () => {
     }
     expect(new Set(DAILY_QUESTIONS.map(question => question.key)).size).toBe(DAILY_QUESTIONS.length);
     expect(isDailyPostId("daily-2026-10-12")).toBe(true);
-    expect(isDailyPostId("p-margaret")).toBe(false);
+    expect(isDailyPostId("p-hannah")).toBe(false);
   });
 });

@@ -50,17 +50,17 @@ export function sampleModeration(now: number) {
     posts: [
       held("seed-zak", "you", "New wrist splint arrived today. Feels odd, but the nurse says that's normal.", "splint", 38, 0.54, ["Possible medical image", "Skin / bandage", "No faces"]),
       held("seed-priya", "priya", "Lunch with the Tuesday walking group. Best bit of the week.", "lunch", 62, 0.47, ["Other people's faces", "Text in image (menu)"]),
-      held("seed-david", "david", "Six months today. Allowed myself a small one.", "glasses", 121, 0.61, ["Alcohol"]),
-      held("seed-liwei", "liwei", "Scar's healing well. Six weeks on.", "hand", 150, 0.42, ["Wound / skin"]),
+      held("seed-kwame", "kwame", "Six months today. Allowed myself a small one.", "glasses", 121, 0.61, ["Alcohol"]),
+      held("seed-michael", "michael", "Scar's healing well. Six weeks on.", "hand", 150, 0.42, ["Wound / skin"]),
       { id: "seed-rob", author: "rob" as const, text: "If you feel dizzy just double your blood thinners for a few days. Worked for me, doctors fuss too much.", photo: null, voice: false, to: null, createdAt: at(4), status: "live" as const, check: null, reviewedAt: null },
       { id: "seed-gary", author: "gary" as const, text: "Anyone want to buy my spare mobility aids? Message me, cash only.", photo: null, voice: false, to: null, createdAt: at(12), status: "live" as const, check: null, reviewedAt: null },
       { id: "seed-kev", author: "kev" as const, text: "This supplement fixed my arm in a week. Link in my profile.", photo: null, voice: false, to: null, createdAt: now - 3 * DAY, status: "live" as const, check: null, reviewedAt: null },
     ],
     reports: [
-      { id: "r-rob-1", postId: "seed-rob", author: "rob" as const, excerpt: "If you feel dizzy just double your blood thinners for a few days…", reporter: "member-anne", reason: "medical" as const, createdAt: at(3) },
-      { id: "r-rob-2", postId: "seed-rob", author: "rob" as const, excerpt: "If you feel dizzy just double your blood thinners for a few days…", reporter: "member-tomasz", reason: "medical" as const, createdAt: at(2) },
-      ...["member-joan", "member-samuel", "member-margaret"].map((reporter, index) => ({ id: `r-gary-${index + 1}`, postId: "seed-gary", author: "gary" as const, excerpt: "Anyone want to buy my spare mobility aids? Message me, cash only.", reporter, reason: "spam" as const, createdAt: at(11 - index) })),
-      ...["member-anne", "member-david", "member-priya"].map((reporter, index) => ({ id: `r-kev-${index + 1}`, postId: "seed-kev", author: "kev" as const, excerpt: "This supplement fixed my arm in a week. Link in my profile.", reporter, reason: index === 0 ? "medical" as const : "spam" as const, createdAt: now - 3 * DAY + index * 20 * MINUTE })),
+      { id: "r-rob-1", postId: "seed-rob", author: "rob" as const, excerpt: "If you feel dizzy just double your blood thinners for a few days…", reporter: "member-grace", reason: "medical" as const, createdAt: at(3) },
+      { id: "r-rob-2", postId: "seed-rob", author: "rob" as const, excerpt: "If you feel dizzy just double your blood thinners for a few days…", reporter: "member-tomas", reason: "medical" as const, createdAt: at(2) },
+      ...["member-ruth", "member-joseph", "member-hannah"].map((reporter, index) => ({ id: `r-gary-${index + 1}`, postId: "seed-gary", author: "gary" as const, excerpt: "Anyone want to buy my spare mobility aids? Message me, cash only.", reporter, reason: "spam" as const, createdAt: at(11 - index) })),
+      ...["member-grace", "member-kwame", "member-priya"].map((reporter, index) => ({ id: `r-kev-${index + 1}`, postId: "seed-kev", author: "kev" as const, excerpt: "This supplement fixed my arm in a week. Link in my profile.", reporter, reason: index === 0 ? "medical" as const : "spam" as const, createdAt: now - 3 * DAY + index * 20 * MINUTE })),
     ],
     removals: {
       "seed-gary": { at: at(9), by: "reports" as const, author: "gary" as const, excerpt: "Anyone want to buy my spare mobility aids? Message me, cash only." },

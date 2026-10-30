@@ -4,6 +4,7 @@ import { BellRing, CalendarDays, CreditCard, House, Inbox, UserRound, Users, Vid
 import { alertable, mainSection, type Clinician } from "@/content/clinicians";
 import { updateClinician, useClinicians, useOwnClinician, useRole } from "@/lib/clinician-portal";
 import { URGENT_WAIT_MS, answer, setPortalClinician, updateConsultation, useConsultations, usePortalClinician, type Consultation } from "@/lib/consultations";
+import { meId as signedInId } from "@/lib/me";
 import { PreviewNote, hueStyle } from "./parts";
 import { PortalConsultations, PortalEarnings, PortalRequests, PortalSessions, PortalToday } from "./portal/pages";
 import PortalSchedule from "./portal/Schedule";
@@ -108,9 +109,9 @@ function Shell({ me, everyone, ownId }: { me: Clinician; everyone: Clinician[]; 
           ))}
         </div>
         <label className="pt-side-card pt-as">
-          <span className="pt-side-label">{ownId === me.id ? "Signed in as" : "Trying the portal as"}</span>
+          <span className="pt-side-label">{ownId === me.id ? "Signed in as" : "Using the demo profile of"}</span>
           <select value={me.id} onChange={event => setPortalClinician(event.target.value === ownId ? null : event.target.value)}>
-            {everyone.map(person => <option key={person.id} value={person.id}>{person.id === ownId ? `${person.name} (you)` : `${person.name} · example`}</option>)}
+            {everyone.map(person => <option key={person.id} value={person.id}>{person.id === ownId ? `${person.name} (you)` : `${person.name} · demo profile`}</option>)}
           </select>
         </label>
       </nav>
@@ -136,8 +137,9 @@ export default function ClinicianPortal() {
   const own = useOwnClinician();
   const role = useRole();
   const picked = usePortalClinician();
-  const meId = picked ?? own?.id ?? null;
-  const me = everyone.find(person => person.id === meId);
+  // Rehyn Connect for clinicians: the portal is always the signed-in clinician's (lib/me.ts), the demo profile when
+  // nobody has joined on this device, so it matches the sidebar, the feed and the weekly sessions.
+  const me = everyone.find(person => person.id === signedInId(picked, own?.id ?? null, everyone));
   if (me) return <Shell me={me} everyone={everyone} ownId={own?.id ?? null} />;
   return (
     <div className="cl-page cl-narrow">

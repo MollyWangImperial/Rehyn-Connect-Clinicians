@@ -13,7 +13,7 @@ function seeded(seed: number) {
   };
 }
 
-const table = (chips = 1000): Player[] => ["you", "margaret", "david", "priya", "samuel"].map((id, i) => ({ id, name: id, chips, human: i === 0 }));
+const table = (chips = 1000): Player[] => ["you", "hannah", "kwame", "priya", "joseph"].map((id, i) => ({ id, name: id, chips, human: i === 0 }));
 const total = (state: Holdem) => state.seats.reduce((sum, seat) => sum + seat.chips, 0) + (state.result ? 0 : state.pot);
 
 /** Plays a hand to the end with every seat a computer player. */

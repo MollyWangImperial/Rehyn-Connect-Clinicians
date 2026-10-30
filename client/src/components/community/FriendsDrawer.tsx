@@ -105,15 +105,15 @@ function RequestItem({ card, memory, cheer, onAccept, onDecline, onUndo, onWave 
         )}
         <span className="cm-fr-pair" aria-hidden="true"><MyFace size={56} /><Face who={who} size={56} /></span>
         <div className="cm-fr-accepted-text">
-          <h3 tabIndex={-1} data-fr-focus={`friends-${who}`}>{`You and ${name} are friends now`}</h3>
+          <h3 tabIndex={-1} data-fr-focus={`friends-${who}`}>{`You and ${name} are now connected`}</h3>
           <p>
-            {waved ? "You waved hello." : "Say hello to start things off."}{" "}
+            {waved ? "You said hello." : "Say hello to start the conversation."}{" "}
             <button type="button" className="cm-fr-inline-undo" onClick={() => onUndo(who)}>Undo<span className="cm-sr">{` accepting ${name}'s request`}</span></button>
           </p>
         </div>
         <div className="cm-fr-accepted-actions">
           <button type="button" className={`cm-fr-wave ${waved ? "is-on" : ""}`} aria-disabled={waved || undefined} onClick={() => onWave(who)}>
-            <HandIcon size={18} /><span>{waved ? "Waved" : "Wave hello"}</span><span className="cm-sr">{` to ${name}`}</span>
+            <HandIcon size={18} /><span>{waved ? "Hello sent" : "Say hello"}</span><span className="cm-sr">{` to ${name}`}</span>
           </button>
         </div>
       </li>
@@ -133,13 +133,13 @@ function RequestItem({ card, memory, cheer, onAccept, onDecline, onUndo, onWave 
   const mutual = request.mutual.filter(id => relationship(memory, id) === "friend");
   const mutualText = mutual.length === request.mutual.length
     ? request.mutualText
-    : `${listNames(mutual.map(id => people[id].name))} ${mutual.length === 1 ? "is a friend" : "are friends"} of yours`;
+    : `${listNames(mutual.map(id => people[id].name))} ${mutual.length === 1 ? "is a connection" : "are connections"} of yours`;
   return (
     <li className="cm-fr-card cm-fr-request">
       <div className="cm-fr-request-top">
         <Face who={who} size={62} />
         <div className="cm-fr-request-text">
-          <h3 className="cm-fr-request-name" tabIndex={-1} data-fr-focus={`ask-${who}`}>{name} <span>wants to be friends</span></h3>
+          <h3 className="cm-fr-request-name" tabIndex={-1} data-fr-focus={`ask-${who}`}>{name} <span>wants to connect</span></h3>
           <p className="cm-fr-sub">{request.where}</p>
           {mutual.length > 0 && (
             <p className="cm-fr-mutual">
@@ -193,7 +193,7 @@ function ForYouTab({ memory, visit, say, focusOn }: PanelProps) {
     onWave: who => {
       if (memory.waves.includes(who)) return;
       communityStore.wave(who);
-      say(`You waved hello to ${people[who].name}.`);
+      say(`You said hello to ${people[who].name}.`);
     },
   };
   const ask = (who: PersonId) => {
@@ -211,16 +211,16 @@ function ForYouTab({ memory, visit, say, focusOn }: PanelProps) {
   return (
     <>
       {memory.settings.requestsFrom === "noOne" && (
-        <p className="cm-fr-off"><PauseCircleIcon size={20} /><span>New friend requests are off. You chose “No one” in Community settings.</span></p>
+        <p className="cm-fr-off"><PauseCircleIcon size={20} /><span>New connection requests are off. You chose “No one” in Settings.</span></p>
       )}
       {cards.length > 0 && (
         <ul className="cm-fr-list">
           {cards.map(card => (
-            <RequestItem key={`${card.request.who}-${card.state}`} card={card} memory={memory} cheer={!still && card.state === "accepted" && cheered.includes(card.request.who)} {...actions} />
+            <RequestItem key={`${card.request.who}-${card.state}`} card={card} memory={memory} cheer={false} {...actions} />
           ))}
         </ul>
       )}
-      {waiting === 0 && <p className="cm-fr-caught-up cm-pop"><CheckIcon size={20} strokeWidth={2.2} /><span>All caught up. No requests waiting.</span></p>}
+      {waiting === 0 && <p className="cm-fr-caught-up cm-pop"><CheckIcon size={20} strokeWidth={2.2} /><span>All caught up. No invitations waiting.</span></p>}
       {suggestions.length > 0 && (
         <div className="cm-fr-suggest">
           <h3 id={suggestId} className="cm-fr-overline is-rust">People you may know</h3>
@@ -231,9 +231,9 @@ function ForYouTab({ memory, visit, say, focusOn }: PanelProps) {
               return (
                 <li key={who} className="cm-fr-person">
                   <Face who={who} size={48} />
-                  <span className="cm-fr-person-text"><b>{name}</b><span>{why}</span></span>
+                  <span className="cm-fr-person-text"><b>{name}</b><span>{people[who].title}</span><span>{why}</span></span>
                   <button type="button" className={`cm-fr-add ${on ? "is-on" : ""}`} onClick={() => ask(who)}>
-                    {on ? "Request sent" : "Add friend"}<span className="cm-sr">{on ? ` to ${name}. Press to cancel it` : ` (${name})`}</span>
+                    {on ? "Pending" : "Connect"}<span className="cm-sr">{on ? `: your request to ${name}. Press to withdraw it` : ` with ${name}`}</span>
                   </button>
                 </li>
               );
@@ -266,7 +266,7 @@ function SentTab({ memory, visit, say, focusOn }: PanelProps) {
   return (
     <>
       {rows.length === 0 ? (
-        <p className="cm-fr-empty">No requests waiting for a yes.</p>
+        <p className="cm-fr-empty">No connection requests waiting for an answer.</p>
       ) : (
         <ul className="cm-fr-list cm-fr-sent-list">
           {rows.map(row => {
@@ -284,7 +284,7 @@ function SentTab({ memory, visit, say, focusOn }: PanelProps) {
           })}
         </ul>
       )}
-      <p className="cm-fr-hint"><EyeIcon size={20} /><span>Requests stay here until they say yes. If you cancel one, they are not told.</span></p>
+      <p className="cm-fr-hint"><EyeIcon size={20} /><span>Requests stay here until they are accepted. If you withdraw one, they are not told.</span></p>
     </>
   );
 }
@@ -302,13 +302,13 @@ function FriendItem({ row, waved, onWave, onUnblock, onPersonMenu }: { row: Frie
         <Face who={row.who} size={50} />
         {row.online && !blocked && <span className="cm-fr-online" aria-hidden="true" />}
       </span>
-      <span className="cm-fr-person-text"><b>{name}</b><span className={tone}>{status}</span></span>
+      <span className="cm-fr-person-text"><b>{name}</b><span>{people[row.who].title}</span><span className={tone}>{status}</span></span>
       <span className="cm-fr-friend-actions">
         {blocked ? (
           <button key="undo" type="button" className="cm-fr-pill is-undo" onClick={() => onUnblock(row.who)}>Undo<span className="cm-sr">{`, and unblock ${name}`}</span></button>
         ) : (
           <button key="wave" type="button" className={`cm-fr-wave ${waved ? "is-on" : ""}`} aria-disabled={waved || undefined} onClick={() => onWave(row.who)}>
-            <HandIcon size={18} /><span>{waved ? "Waved" : "Wave"}</span><span className="cm-sr">{` to ${name}`}</span>
+            <HandIcon size={18} /><span>{waved ? "Hello sent" : "Say hello"}</span><span className="cm-sr">{` to ${name}`}</span>
           </button>
         )}
         <button type="button" className="cm-fr-more" aria-label={`More options for ${name}`} aria-haspopup="dialog" data-fr-focus={`more-${row.who}`}
@@ -345,18 +345,18 @@ function FriendListTab({ memory, say, focusOn, onPersonMenu }: PanelProps & { on
       <div className="cm-fr-find">
         <label className="cm-fr-find-label">
           <SearchIcon size={20} />
-          <span className="cm-sr">Find a friend</span>
-          <input ref={field} type="search" value={query} maxLength={40} placeholder="Find a friend" autoComplete="off" spellCheck={false} onChange={event => setQuery(event.target.value)} onKeyDown={onFindKey} />
+          <span className="cm-sr">Find a connection</span>
+          <input ref={field} type="search" value={query} maxLength={40} placeholder="Search your connections" autoComplete="off" spellCheck={false} onChange={event => setQuery(event.target.value)} onKeyDown={onFindKey} />
         </label>
         {query && <button type="button" className="cm-fr-clear" aria-label="Clear the search" onClick={() => { setQuery(""); field.current?.focus(); }}><CloseIcon size={16} /></button>}
       </div>
-      <p className="cm-sr" role="status">{words ? (shown.length === 0 ? "No friends found" : `${shown.length} ${shown.length === 1 ? "friend" : "friends"} found`) : ""}</p>
+      <p className="cm-sr" role="status">{words ? (shown.length === 0 ? "No connections found" : `${shown.length} ${shown.length === 1 ? "connection" : "connections"} found`) : ""}</p>
       {shown.length > 0 ? (
         <ul className="cm-fr-list cm-fr-friends">
           {shown.map(row => <FriendItem key={row.who} row={row} waved={memory.waves.includes(row.who)} onWave={wave} onUnblock={unblock} onPersonMenu={onPersonMenu} />)}
         </ul>
       ) : (
-        <p className="cm-fr-empty">{words ? `No friends match “${query.trim()}”.` : "No friends here yet. Try People you may know, in For you."}</p>
+        <p className="cm-fr-empty">{words ? `No connections match “${query.trim()}”.` : "No connections yet. Find colleagues in the Clinicians directory, or try People you may know under Invitations."}</p>
       )}
     </>
   );
@@ -464,7 +464,7 @@ export default function FriendsDrawer({ tab, onTab, onClose, onPersonMenu, fallb
   const requestsFrom = settingsChoices.requestsFrom.find(choice => choice.id === memory.settings.requestsFrom)?.label ?? "Everyone";
   const tabId = (item: FriendsTab) => `${tabsId}-${item}`;
   const panelId = `${tabsId}-panel`;
-  const line = `${friends} friend${friends === 1 ? "" : "s"} · ${waiting === 0 ? "no requests waiting" : waiting === 1 ? "1 request waiting for you" : `${waiting} requests waiting for you`}`;
+  const line = `${friends} connection${friends === 1 ? "" : "s"} · ${waiting === 0 ? "no invitations waiting" : waiting === 1 ? "1 invitation waiting for you" : `${waiting} invitations waiting for you`}`;
 
   // When a row changes into something else (a request answered, an "Unblock?" question shown), the
   // focus moves to what took its place rather than being lost.
@@ -497,13 +497,13 @@ export default function FriendsDrawer({ tab, onTab, onClose, onPersonMenu, fallb
     <CommunityDialog kind="drawer" labelledBy={titleId} onClose={onClose} fallbackFocus={fallbackFocus} className="cm-fr-drawer">
       <div className="cm-dialog-head">
         <div className="cm-dialog-titles">
-          <h2 id={titleId} className="cm-dialog-title" tabIndex={-1}>Friends</h2>
+          <h2 id={titleId} className="cm-dialog-title" tabIndex={-1}>My Network</h2>
           <p>{line}</p>
         </div>
         <button type="button" className="cm-dialog-close" aria-label="Close" onClick={onClose}><CloseIcon size={22} /></button>
       </div>
 
-      <div className="cm-segments cm-fr-tabs" role="tablist" aria-label="Friends and requests">
+      <div className="cm-segments cm-fr-tabs" role="tablist" aria-label="Connections and invitations">
         {FRIENDS_TABS.map(item => {
           const on = tab === item;
           const count = counts[item];

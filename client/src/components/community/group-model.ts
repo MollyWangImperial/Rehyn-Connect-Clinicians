@@ -28,7 +28,9 @@ import type { BattleshipsSave } from "./games/battleships-rules";
 
 // The groups model. Every list of groups the page shows comes from here, and the privacy rule is
 // kept here, once: a private group is seen only by the people in it. It never appears for anyone
-// else in a list, a search, a count or a suggestion. Games are only for private groups.
+// else in a list, a search, a count or a suggestion. In the clinician edition the groups are
+// professional networks inside a condition, and members are clinicians. (The game rules below stay
+// for saved data, but the clinician edition never surfaces games: comment 7.)
 
 /** The cover a started group wears: its theme's drawing, or its colour and sign. */
 export function coverForTheme(theme: StartThemeId): GroupCover {
@@ -74,7 +76,7 @@ export type GroupModel = {
 function fromSample(group: SampleGroup, kind: "sample" | "joined", memory: CommunityMemory, since: number): GroupModel {
   return {
     id: group.id, name: group.name, kind, about: group.about, lastAt: since - group.lastMinutesAgo * 60_000, cover: group.cover, tint: group.tint, ink: group.ink,
-    meta: `${group.members} members`, online: group.online, faces: group.faces, challenge: group.challenge,
+    meta: `${group.members + (kind === "joined" ? 1 : 0)} clinicians`, online: group.online, faces: group.faces, challenge: group.challenge,
     messages: group.messages, incoming: group.incoming,
     unread: memory.read.includes(group.id as SampleGroupId) ? 0 : group.unread, active: group.active, started: null,
     conditionId: group.conditionId, visibility: group.visibility, members: group.members + (kind === "joined" ? 1 : 0),
@@ -87,7 +89,7 @@ function fromStarted(group: StartedGroup, memory: CommunityMemory): GroupModel {
   const friends = group.friends.filter(who => !isBlocked(memory, who));
   return {
     id: group.id, name: group.name, kind: "started", cover: coverForTheme(group.theme),
-    about: `A little corner for ${look.label.toLowerCase()}, started by you.`, lastAt: group.createdAt,
+    about: `A ${look.label.toLowerCase()} group for clinicians in ${conditionOf(group.conditionId).name}, started by you.`, lastAt: group.createdAt,
     tint: look.tint, ink: look.ink,
     meta: "Started by you", online: 0, faces: group.friends,
     challenge: { text: startedGroupChallenge, done: 0, total: 1 }, messages: [], incoming: null, unread: 0, active: false, started: group,
@@ -111,6 +113,8 @@ export function myGroups(memory: CommunityMemory, since = communityStore.visitSt
 export type SubgroupCard = {
   id: string;
   name: string;
+  /** Its professional purpose, in a line. */
+  about: string;
   cover: GroupCover;
   visibility: GroupVisibility;
   members: number;
@@ -129,13 +133,13 @@ export type SubgroupCard = {
 export function visibleSubgroups(memory: CommunityMemory, conditionId: ConditionId): SubgroupCard[] {
   // The person's private groups come first: those are the ones nobody else can find.
   const mine = myGroups(memory).filter(group => group.conditionId === conditionId).sort((a, b) => Number(b.visibility === "private") - Number(a.visibility === "private")).map((group): SubgroupCard => ({
-    id: group.id, name: group.name, cover: group.cover, visibility: group.visibility, members: group.members,
+    id: group.id, name: group.name, about: group.about, cover: group.cover, visibility: group.visibility, members: group.members,
     faces: group.faces.filter(who => !isBlocked(memory, who)), activity: group.activity, member: true, own: group.kind !== "joined",
   }));
   const others = [...suggestedGroups, ...conditionGroups]
     .filter(group => group.conditionId === conditionId && group.visibility === "public" && !mine.some(item => item.id === group.id))
     .map((group): SubgroupCard => ({
-      id: group.id, name: group.name, cover: group.cover, visibility: "public", members: group.members,
+      id: group.id, name: group.name, about: group.about, cover: group.cover, visibility: "public", members: group.members,
       faces: group.faces.filter(who => !isBlocked(memory, who)), activity: group.activity, member: false, own: false,
     }));
   return [...mine, ...others];

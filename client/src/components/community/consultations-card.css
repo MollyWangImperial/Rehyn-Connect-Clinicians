@@ -1,0 +1,21 @@
+/* My Consultations, in the feed's right lane (comment 9). */
+.cc-card { padding: 14px 16px 12px; font-family: var(--cx-font); color: var(--cx-ink); }
+.cc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.cc-title { margin: 0; font-size: 16px; font-weight: 700; }
+.cc-all { color: var(--cx-accent); font-size: 13px; font-weight: 600; text-decoration: none; }
+.cc-all:hover { text-decoration: underline; }
+.cc-list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.cc-list li + li { border-top: 1px solid var(--cx-line); }
+.cc-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 4px; border-radius: var(--cx-radius); color: inherit; text-decoration: none; }
+.cc-row:hover { background: var(--cx-subtle); }
+.cc-row:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 1px; }
+.cc-when { display: flex; flex: none; flex-direction: column; width: 72px; font-size: 12.5px; line-height: 1.35; }
+.cc-when b { font-weight: 700; }
+.cc-when span { color: var(--cx-muted); }
+.cc-who { display: flex; flex: 1; flex-direction: column; min-width: 0; font-size: 13.5px; line-height: 1.35; }
+.cc-who b { overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.cc-who > span { color: var(--cx-muted); font-size: 12.5px; }
+.cc-example { color: var(--cx-warn); font-weight: 600; }
+.cc-icon { flex: none; color: var(--cx-faint); }
+.cc-empty, .cc-note { margin: 4px 0 0; color: var(--cx-muted); font-size: 12.5px; line-height: 1.45; }
+.cc-note { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--cx-line); }

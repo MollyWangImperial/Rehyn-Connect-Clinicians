@@ -697,7 +697,12 @@ function WatchTiles({ place, items }: { place: ConditionPlace; items: LibraryIte
  * What the page fills in around the bento: `opening` is a story that opens the page (it sits above
  * Understand), `letter` a letter that closes it; `stories` is left out of the parts bar when empty.
  */
-type Slots = { opening?: ReactNode; sources: ReactNode; stories: ReactNode; clinicians?: ReactNode; letter?: ReactNode; ask: ReactNode; related: ReactNode; footer: string; purpose: (part: "understand" | "recover" | "liveWell" | "watch") => string };
+type Slots = {
+  opening?: ReactNode; sources: ReactNode; stories: ReactNode; clinicians?: ReactNode; letter?: ReactNode; ask: ReactNode; related: ReactNode; footer: string;
+  purpose: (part: "understand" | "recover" | "liveWell" | "watch") => string;
+  /** Clinician contributions (AddToLibrary.tsx), shown at the end of the part they were added to; only parts that have some. */
+  contributed?: Partial<Record<"understand" | "recover" | "liveWell" | "watch", ReactNode>>;
+};
 
 export function ConditionBento({ place, state, slots }: { place: ConditionPlace; state: LibraryState; slots: Slots }) {
   const { condition } = place;
@@ -714,7 +719,7 @@ export function ConditionBento({ place, state, slots }: { place: ConditionPlace;
     { id: "watch", label: "Watch & listen" },
     { id: "sources", label: "Trusted sources" },
     ...(slots.stories ? [{ id: "stories", label: "Stories", story: true }] : []),
-  ].filter(part => part.id !== "watch" || content.watch.length > 0);
+  ].filter(part => part.id !== "watch" || content.watch.length > 0 || Boolean(slots.contributed?.watch));
   const head = (id: string, title: string, note?: string) => <div className="lib-v2-head">
     <h2 id={`h-${id}`}>{title}</h2>
     {note && <span>{note}</span>}
@@ -729,18 +734,22 @@ export function ConditionBento({ place, state, slots }: { place: ConditionPlace;
         <section id="understand" aria-labelledby="h-understand" className="lib-v2-part">
           {head("understand", "Understand", slots.purpose("understand"))}
           <Understand place={place} items={ours} outside={outside} />
+          {slots.contributed?.understand}
         </section>
         <section id="recover" aria-labelledby="h-recover" className="lib-v2-part">
           {head("recover", contentTitle("recover", condition), slots.purpose("recover"))}
           <GoalCards place={place} items={content.recover} />
+          {slots.contributed?.recover}
         </section>
         <section id="livewell" aria-labelledby="h-livewell" className="lib-v2-part">
           {head("livewell", "Live well", slots.purpose("liveWell"))}
           <LiveWell place={place} items={content.liveWell} />
+          {slots.contributed?.liveWell}
         </section>
-        {content.watch.length > 0 && <section id="watch" aria-labelledby="h-watch" className="lib-v2-part">
+        {(content.watch.length > 0 || slots.contributed?.watch) && <section id="watch" aria-labelledby="h-watch" className="lib-v2-part">
           {head("watch", "Watch & listen", slots.purpose("watch"))}
-          <WatchTiles place={place} items={content.watch} />
+          {content.watch.length > 0 && <WatchTiles place={place} items={content.watch} />}
+          {slots.contributed?.watch}
         </section>}
         {slots.sources}
         {slots.stories}

@@ -41,7 +41,7 @@ describe("the first-open notice", () => {
 
   it("says who can read messages, and asks for one tap", () => {
     expect(messagesNotice.title).toBe("Before you message");
-    expect(messagesNotice.text).toBe("The Rehyn team can access messages sent here, to keep the community safe. Please keep this in mind before sharing personal information.");
+    expect(messagesNotice.text).toBe("The Rehyn team can access messages sent here, to keep the network safe. Do not share patient-identifiable information in messages.");
     expect(messagesNotice.button).toBe("OK, I understand");
   });
 });

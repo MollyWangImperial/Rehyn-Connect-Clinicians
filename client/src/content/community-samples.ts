@@ -1,42 +1,56 @@
-// Sample content for the My community preview. Every person, post, group, message, poll, friend
-// request, alert and number here is invented, and nothing a person does on the page leaves their
-// device. Faces and group covers are small drawings kept in /public/community-art; posted photos are real ones (below).
+// Sample content for Rehyn Connect for clinicians, a preview. Every person, post, group, message, connection request
+// and number here is an example (demo profiles, marked as such on their profiles), and nothing a person does on the page
+// leaves their device. The people are the example clinicians of the directory (content/clinicians.ts), with the same
+// names and photographic portraits everywhere they appear. The ids ("hannah", "garden" …) are only internal keys.
+
+import { CLINICIANS, professionalTitle } from "./clinicians";
 
 // The pictures live in public/community-art: a folder called "community" would make the server
 // redirect the /community page to /community/.
 const art = (id: string) => `/community-art/${id}.svg`;
 
-export type PersonId = "margaret" | "david" | "tomasz" | "anne" | "priya" | "samuel" | "joan" | "liwei";
-export type Person = { id: PersonId; name: string; face: string; tint: string; about: string; town: string };
+export type PersonId = "hannah" | "kwame" | "tomas" | "grace" | "priya" | "joseph" | "ruth" | "michael" | "sophie" | "sarah" | "elena" | "arjun" | "imani" | "amara";
+/** Who someone is in the network: a clinician (posts in the feed are only ever theirs) or an account not yet verified. */
+export type MemberRole = "clinician" | "unverified";
+export type Person = { id: PersonId; name: string; face: string; tint: string; about: string; town: string; clinicianId: string; title: string; role: MemberRole };
 
-export const people: Record<PersonId, Person> = {
-  margaret: { id: "margaret", name: "Margaret", face: art("e5f035b22084e040992a2bae4853b87a"), tint: "#F3D9CC", about: "Leeds", town: "Leeds" },
-  david: { id: "david", name: "David", face: art("5ae96ba6c0a7a4ce0abdacea5662d031"), tint: "#CFE2D6", about: "Walks with Biscuit, his dog", town: "Dover" },
-  tomasz: { id: "tomasz", name: "Tomasz", face: art("dc2c2621058c2e3cafb744564f6e0b9c"), tint: "#D5E1E6", about: "New this week", town: "Dover" },
-  anne: { id: "anne", name: "Anne", face: art("762f84e9e300103ccc005eaa89800ca5"), tint: "#FBEBC2", about: "Bath", town: "Bath" },
-  priya: { id: "priya", name: "Priya", face: art("abfddd7f2a1894d89beeac20f7fbbedb"), tint: "#E9E2F4", about: "Leicester", town: "Leicester" },
-  samuel: { id: "samuel", name: "Samuel", face: art("a9469e8bfd054c29a713033e9eac24f0"), tint: "#DCECF4", about: "One-handed cooks", town: "Cardiff" },
-  joan: { id: "joan", name: "Joan", face: art("d6d1ced4c77f6cb92d063a301a9f70b2"), tint: "#F6DDD3", about: "Garden gang", town: "Whitby" },
-  liwei: { id: "liwei", name: "Li Wei", face: art("6fae8d2a2b78d33e738f97964301ed6b"), tint: "#E3EFE6", about: "Kitchen singalong", town: "Manchester" },
+/** Which directory clinician each network person is. */
+export const PERSON_CLINICIAN: Record<PersonId, string> = {
+  hannah: "hannah-brooks", kwame: "kwame-mensah", tomas: "tomas-leal", grace: "grace-whitlow", priya: "priya-raman", joseph: "joseph-hartley",
+  ruth: "ruth-calloway", michael: "michael-chau", sophie: "sophie-adair", sarah: "sarah-whitfield", elena: "elena-rossi", arjun: "arjun-mehta",
+  imani: "imani-clarke", amara: "amara-osei",
 };
-export const PERSON_IDS: PersonId[] = ["margaret", "david", "tomasz", "anne", "priya", "samuel", "joan", "liwei"];
+export const PERSON_IDS = Object.keys(PERSON_CLINICIAN) as PersonId[];
+/** The network person a directory clinician is, if they are one. */
+export const personOfClinician = (clinicianId: string): PersonId | undefined => PERSON_IDS.find(id => PERSON_CLINICIAN[id] === clinicianId);
+
+const asPerson = (id: PersonId): Person => {
+  const clinician = CLINICIANS.find(item => item.id === PERSON_CLINICIAN[id])!;
+  const title = professionalTitle(clinician);
+  return { id, name: clinician.name, face: clinician.photo ?? "", tint: "#E4E7EA", about: `${title} · ${clinician.org ?? ""}`, town: clinician.place ?? "", clinicianId: clinician.id, title, role: "clinician" };
+};
+export const people = Object.fromEntries(PERSON_IDS.map(id => [id, asPerson(id)])) as Record<PersonId, Person>;
 
 /**
- * Everyone who can appear in My community: the example people, and Gary, who joined two days ago
- * and has no drawing (his picture is his initial). Gary is blocked when the preview starts.
+ * Everyone who can appear in the network: the example clinicians, and Gary, an unverified account that joined two days
+ * ago with no photo (his picture is his initial). Gary is blocked when the preview starts.
  */
 export type MemberId = PersonId | "gary";
 export type Pronoun = "he" | "she" | "they";
-export type Member = { id: MemberId; name: string; face: string | null; tint: string; ink: string; initial: string; about: string; pronoun: Pronoun };
-const personPronoun: Record<PersonId, Pronoun> = { margaret: "she", david: "he", tomasz: "he", anne: "she", priya: "she", samuel: "he", joan: "she", liwei: "they" };
-const asMember = (person: Person): Member => ({ id: person.id, name: person.name, face: person.face, tint: person.tint, ink: "#1E2A26", initial: person.name.slice(0, 1), about: person.about, pronoun: personPronoun[person.id] });
+export type Member = { id: MemberId; name: string; face: string | null; tint: string; ink: string; initial: string; about: string; pronoun: Pronoun; role: MemberRole };
+const personPronoun: Record<PersonId, Pronoun> = {
+  hannah: "she", kwame: "he", tomas: "he", grace: "she", priya: "she", joseph: "he", ruth: "she", michael: "he", sophie: "she", sarah: "she", elena: "she",
+  arjun: "he", imani: "she", amara: "she",
+};
+const asMember = (person: Person): Member => ({ id: person.id, name: person.name, face: person.face, tint: person.tint, ink: "#1E2A26", initial: person.name.replace(/^Dr\.? /, "").slice(0, 1), about: person.about, pronoun: personPronoun[person.id], role: person.role });
 export const members: Record<MemberId, Member> = {
-  margaret: asMember(people.margaret), david: asMember(people.david), tomasz: asMember(people.tomasz), anne: asMember(people.anne),
-  priya: asMember(people.priya), samuel: asMember(people.samuel), joan: asMember(people.joan), liwei: asMember(people.liwei),
-  gary: { id: "gary", name: "Gary", face: null, tint: "#DDD7CB", ink: "#4F5A55", initial: "G", about: "Joined 2 days ago", pronoun: "he" },
+  ...(Object.fromEntries(PERSON_IDS.map(id => [id, asMember(people[id])])) as Record<PersonId, Member>),
+  gary: { id: "gary", name: "Gary", face: null, tint: "#DDD7CB", ink: "#4F5A55", initial: "G", about: "Unverified account · joined 2 days ago", pronoun: "he", role: "unverified" },
 };
 export const MEMBER_IDS: MemberId[] = [...PERSON_IDS, "gary"];
 export const isPersonId = (id: MemberId): id is PersonId => id !== "gary";
+/** Only verified clinicians' posts reach the clinician feed (comment 10): the feed filters on this, not on labels. */
+export const isClinician = (id: MemberId): boolean => members[id]?.role === "clinician";
 /**
  * Words for sentences about someone: "he won't be told", "unblock him any time", "they are blocked".
  * `is` and `was` agree with the pronoun ("they are"); after a name, always write "is" ("Li Wei is").
@@ -62,7 +76,7 @@ export const photos = {
 /** The one-tap ways to join in, so nobody has to type to take part. */
 export type ReactionKind = "love" | "welldone" | "metoo" | "withyou";
 export const REACTION_KINDS: ReactionKind[] = ["love", "welldone", "metoo", "withyou"];
-export const reactionLabels: Record<ReactionKind, string> = { love: "Love", welldone: "Well done", metoo: "Me too", withyou: "With you" };
+export const reactionLabels: Record<ReactionKind, string> = { love: "Like", welldone: "Insightful", metoo: "Agree", withyou: "Support" };
 
 export type FeelingId = "hopeful" | "proud" | "calm" | "tired" | "low" | "frustrated";
 export const feelings: { id: FeelingId; label: string }[] = [
@@ -82,18 +96,21 @@ export const FEELING_IDS: FeelingId[] = feelings.map(feeling => feeling.id);
  * list is a placeholder until the real one is confirmed.
  */
 export type ConditionId = "stroke" | "parkinsons" | "ms" | "brain" | "spine" | "joint";
-export type Condition = { id: ConditionId; name: string; short: string; members: string; tint: string; ink: string };
+/** A medical condition clinicians gather around: what its groups are for, and the expertise found in them. */
+export type Condition = { id: ConditionId; name: string; short: string; members: string; tint: string; ink: string; purpose: string; expertise: string };
+// One neutral tile colour for every condition (comment 22): the accent marks selection and membership instead.
+const tile = { tint: "#F3F4F6", ink: "#1F2933" };
 export const conditions: Condition[] = [
-  { id: "stroke", name: "Stroke", short: "Stroke", members: "12k members", tint: "#E5EEE7", ink: "#173D2F" },
-  { id: "parkinsons", name: "Parkinson's", short: "Parkinson's · 3.2k", members: "3.2k members", tint: "#E9E2F4", ink: "#45357A" },
-  { id: "ms", name: "Multiple sclerosis", short: "Multiple sclerosis · 2.6k", members: "2.6k members", tint: "#DCECF4", ink: "#1F4E66" },
-  { id: "brain", name: "Brain injury", short: "Brain injury · 1.9k", members: "1.9k members", tint: "#FBEBC2", ink: "#6B5108" },
-  { id: "spine", name: "Spinal cord injury", short: "Spinal cord injury · 1.1k", members: "1.1k members", tint: "#FBE3DB", ink: "#8F3520" },
-  { id: "joint", name: "Hip and knee", short: "Hip and knee · 4.3k", members: "4.3k members", tint: "#F6EEDB", ink: "#7A5C22" },
+  { id: "stroke", name: "Stroke", short: "Stroke", members: "1,240 clinicians", ...tile, purpose: "Acute care, rehabilitation and secondary prevention after stroke and TIA.", expertise: "Stroke physicians, neuro physios, SLTs, OTs, stroke nurses" },
+  { id: "parkinsons", name: "Parkinson's", short: "Parkinson's · 610", members: "610 clinicians", ...tile, purpose: "Diagnosis, medicines, movement and non-motor symptoms in Parkinson's.", expertise: "Neurologists, geriatricians, PD nurses, physios, SLTs" },
+  { id: "ms", name: "Multiple sclerosis", short: "Multiple sclerosis · 480", members: "480 clinicians", ...tile, purpose: "Disease-modifying therapy, relapse care, fatigue and mobility in MS.", expertise: "Neurologists, MS nurses, physios, OTs" },
+  { id: "brain", name: "Brain injury", short: "Brain injury · 350", members: "350 clinicians", ...tile, purpose: "Acquired and traumatic brain injury: cognition, behaviour and return to work.", expertise: "Neuropsychologists, rehab physicians, OTs, SLTs" },
+  { id: "spine", name: "Spinal cord injury", short: "Spinal cord injury · 190", members: "190 clinicians", ...tile, purpose: "Spinal cord injury rehabilitation, bladder and bowel care, and seating.", expertise: "Spinal injury consultants, physios, OTs, specialist nurses" },
+  { id: "joint", name: "Hip and knee", short: "Hip and knee · 720", members: "720 clinicians", ...tile, purpose: "Joint replacement pathways, prehab and rehab after hip and knee surgery.", expertise: "Orthopaedic surgeons, MSK physios, OTs" },
 ];
 export const CONDITION_IDS: ConditionId[] = conditions.map(condition => condition.id);
 /** The condition groups the person is in when the preview starts. */
-export const startConditions: ConditionId[] = ["stroke"];
+export const startConditions: ConditionId[] = ["stroke", "parkinsons"];
 
 /**
  * Who can see a subgroup. Private ones are invisible to anyone not in them: not listed, searched,
@@ -154,90 +171,89 @@ export type SampleGroup = {
   activity: GroupActivity;
 };
 
+// The clinician's own groups: condition-focused professional networks of clinicians with relevant expertise (comments 8
+// and 16). Covers are a quiet grey tile with the group's initials; the accent marks membership instead.
+const neutral = { tint: "#EEF0F2", ink: "#27323D" };
+const cover = (initial: string): GroupCover => ({ ...neutral, initial });
+
 export const sampleGroups: SampleGroup[] = [
   {
-    id: "garden", name: "Garden gang", lastMinutesAgo: 20, conditionId: "stroke", visibility: "private",
-    activity: { text: "Chess on now · Margaret vs Joan", kind: "game" },
-    about: "For anyone getting their hands back into the soil. Windowsill pots and allotments alike, at whatever pace your hands allow.",
-    cover: { image: art("fb2175989c4397ad5f421824e41a5e87"), tint: "#CFE8C9", ink: "#1C4A3C" },
-    tint: "#E1F0DC", ink: "#24694B", members: 6, online: 3, faces: ["margaret", "joan", "anne", "samuel"], unread: 3, active: true,
-    challenge: { text: "This week: a photo of something growing", done: 4, total: 6 },
+    id: "garden", name: "Stroke Rehabilitation Network", lastMinutesAgo: 20, conditionId: "stroke", visibility: "private",
+    activity: { text: "Case discussion: shoulder pain after stroke", kind: "chat" },
+    about: "Stroke physicians, therapists and nurses sharing practice across the rehabilitation pathway: early supported discharge, upper limb recovery, spasticity and community follow-up.",
+    cover: cover("SR"), ...neutral, members: 186, online: 9, faces: ["hannah", "ruth", "grace", "joseph"], unread: 3, active: true,
+    challenge: { text: "This month: share one audit or service improvement from your unit", done: 41, total: 186 },
     messages: [
-      { id: "g1", who: "anne", text: "Morning, gardeners. Anyone's sweet peas up yet?", hearts: 2 },
-      { id: "g2", who: "margaret", text: "First tomatoes! Left hand did the picking.", photo: photos.tomatoes, hearts: 11 },
-      { id: "g3", who: "joan", text: "Mine are still green. I'm not jealous at all.", hearts: 5 },
+      { id: "g1", who: "grace", text: "Has anyone moved their ESD team to a seven-day service? Interested in how you staffed the weekend OT cover.", hearts: 4 },
+      { id: "g2", who: "hannah", text: "We did in April. Happy to share our rota and the dysphagia screening changes we made alongside it.", hearts: 11 },
+      { id: "g3", who: "ruth", text: "Same question from the cardiac side: our joint stroke–AF clinic started last month. Early numbers look good.", hearts: 5 },
     ],
-    incoming: { id: "g4", who: "samuel", text: "Tomato tart recipe going in One-handed cooks tonight!", hearts: 3 },
-    preview: "Margaret: First tomatoes!",
+    incoming: { id: "g4", who: "joseph", text: "Uploading the hemiplegic shoulder pathway we use to the Library tonight.", hearts: 3 },
+    preview: "Hannah Brooks: Happy to share our rota",
   },
   {
-    id: "walk", name: "Morning walkers", lastMinutesAgo: 150, conditionId: "stroke", visibility: "public",
-    activity: { text: "David: 7 tomorrow?", kind: "chat" },
-    about: "Short walks, slow walks and round-the-block walks. We go at the pace of whoever is slowest that day.",
-    cover: { image: art("41e5e4e8b1bf6c9bbe7330cc69485ef5"), tint: "#CFE6F2", ink: "#1F4E66" },
-    tint: "#DCECF4", ink: "#1F4E66", members: 8, online: 2, faces: ["david", "tomasz", "priya", "liwei"], unread: 0, active: false,
-    challenge: { text: "This week: one walk a little further than last week", done: 5, total: 8 },
+    id: "walk", name: "Parkinson's Clinical Network", lastMinutesAgo: 150, conditionId: "parkinsons", visibility: "public",
+    activity: { text: "Arjun Mehta: LCIG referral criteria?", kind: "chat" },
+    about: "Neurologists, Parkinson's nurse specialists, physios and SLTs discussing diagnosis, medication timing in hospital, device-aided therapies and multidisciplinary care.",
+    cover: cover("PC"), ...neutral, members: 142, online: 4, faces: ["arjun", "kwame", "priya", "michael"], unread: 0, active: false,
+    challenge: { text: "This month: review time-critical medication on your ward", done: 23, total: 142 },
     messages: [
-      { id: "w1", who: "david", text: "Biscuit and I made it to the corner shop and back.", photo: photos.dog, hearts: 14 },
-      { id: "w2", who: "tomasz", text: "Can I join you tomorrow? I can do the first bit.", hearts: 6 },
+      { id: "w1", who: "arjun", text: "Updated our referral criteria for device-aided therapies. Does anyone else use a shared MDT review before referral?", hearts: 14 },
+      { id: "w2", who: "priya", text: "Yes, physio and SLT both attend ours. It caught two people who were better served by a medication review first.", hearts: 6 },
     ],
-    incoming: { id: "w3", who: "david", text: "Of course! 7 at the park gate. We go at your pace.", hearts: 4 },
-    preview: "David: 7 tomorrow?",
+    incoming: { id: "w3", who: "kwame", text: "Worth adding a mood and cognition screen to that MDT. Happy to share the one we use.", hearts: 4 },
+    preview: "Arjun Mehta: referral criteria",
   },
   {
-    id: "cook", name: "One-handed cooks", lastMinutesAgo: 1500, conditionId: "stroke", visibility: "public",
-    activity: { text: "Samuel shared a recipe", kind: "chat" },
-    about: "Recipes, tips and gadgets for cooking with one hand. Every kitchen win counts.",
-    cover: { image: art("91162a45a080841062c0f9de0b0bc8fd"), tint: "#FBE3B8", ink: "#6B5108" },
-    tint: "#FBEBC2", ink: "#6B5108", members: 11, online: 1, faces: ["samuel", "priya", "margaret", "anne"], unread: 0, active: false,
-    challenge: { text: "This week: share one recipe you can make one-handed", done: 3, total: 11 },
+    id: "cook", name: "Aphasia and Dysphagia Practice Group", lastMinutesAgo: 1500, conditionId: "stroke", visibility: "public",
+    activity: { text: "Hannah Brooks shared a screening tool", kind: "chat" },
+    about: "Speech and language therapists and colleagues sharing assessment tools, therapy approaches and patient information for communication and swallowing after stroke.",
+    cover: cover("AD"), ...neutral, members: 98, online: 2, faces: ["hannah", "sophie", "imani", "grace"], unread: 0, active: false,
+    challenge: { text: "This month: share one accessible patient leaflet", done: 12, total: 98 },
     messages: [
-      { id: "c1", who: "samuel", text: "Tip: a wet tea towel under the bowl stops it sliding.", hearts: 18 },
-      { id: "c2", who: "priya", text: "Game changer. Made dal yesterday all by myself.", hearts: 9 },
+      { id: "c1", who: "hannah", text: "Our bedside swallow screen with the IDDSI levels on one page, in case it helps anyone revising theirs.", hearts: 18 },
+      { id: "c2", who: "sophie", text: "Thank you. We have been aligning our texture-modified menus with IDDSI too: happy to compare notes.", hearts: 9 },
     ],
-    incoming: { id: "c3", who: "anne", text: "Does anyone have a good rocker knife to recommend?", hearts: 1 },
+    incoming: { id: "c3", who: "imani", text: "Could we use this on the stroke unit for nurse-led screening? Would value your view.", hearts: 1 },
   },
   {
-    id: "music", name: "Kitchen singalong", lastMinutesAgo: 2900, conditionId: "stroke", visibility: "private",
-    activity: { text: "Ludo tonight at 7 pm", kind: "soon" },
-    about: "Singing helps the words come back. A song a day, as loud or as quiet as you like.",
-    cover: { image: art("242c86dad4e267c11919a79438078c19"), tint: "#E4DAF3", ink: "#45357A" },
-    tint: "#E9E2F4", ink: "#45357A", members: 5, online: 2, faces: ["priya", "joan", "liwei"], unread: 1, active: false,
-    challenge: { text: "This week: sing one whole chorus out loud", done: 2, total: 5 },
+    id: "music", name: "Young Stroke Clinicians", lastMinutesAgo: 2900, conditionId: "stroke", visibility: "private",
+    activity: { text: "Journal club Thursday, 1 pm", kind: "soon" },
+    about: "A private group for clinicians running services for people who have a stroke under 55: causes, return to work, driving and family life.",
+    cover: cover("YS"), ...neutral, members: 37, online: 2, faces: ["kwame", "ruth", "tomas"], unread: 1, active: false,
+    challenge: { text: "This month: bring one case to journal club", done: 6, total: 37 },
     messages: [
-      { id: "m1", who: "priya", text: "Sang the whole chorus this morning. The neighbours have my sympathy.", hearts: 12 },
-      { id: "m2", who: "joan", text: "Tomorrow's song: Que Sera, Sera. Who's in?", hearts: 4 },
+      { id: "m1", who: "tomas", text: "Paper for Thursday: PFO closure outcomes in under-60s. I'll bring the slides.", hearts: 12 },
+      { id: "m2", who: "ruth", text: "Can we also cover return-to-work advice? Two of my patients asked this week.", hearts: 4 },
     ],
-    incoming: { id: "m3", who: "liwei", text: "I'm in. My grandson will judge us.", hearts: 2 },
+    incoming: { id: "m3", who: "kwame", text: "I can add ten minutes on adjustment and identity after a young stroke.", hearts: 2 },
   },
 ];
 
 export const suggestedGroups: SampleGroup[] = [
   {
-    id: "knit", name: "Knit and natter", why: "Joan and 6 others", lastMinutesAgo: 300, conditionId: "stroke", visibility: "public",
-    activity: { text: "Dropped stitches welcome", kind: "chat" },
-    about: "Knitting, crochet and a good natter. Dropped stitches welcome.",
-    cover: { tint: "#FBEBC2", ink: "#6B5108", initial: "K" },
-    tint: "#FBEBC2", ink: "#6B5108", members: 7, online: 1, faces: ["joan", "anne", "margaret"], unread: 0, active: false,
-    challenge: { text: "This week: cast on a few stitches, any colour", done: 2, total: 7 },
+    id: "knit", name: "Spasticity Management Forum", why: "Priya Raman and 14 others", lastMinutesAgo: 300, conditionId: "stroke", visibility: "public",
+    activity: { text: "Botulinum toxin pathways", kind: "chat" },
+    about: "Rehab physicians and therapists comparing botulinum toxin pathways, splinting and goal setting for post-stroke spasticity.",
+    cover: cover("SM"), ...neutral, members: 64, online: 1, faces: ["priya", "grace", "hannah"], unread: 0, active: false,
+    challenge: { text: "This month: share a goal attainment example", done: 9, total: 64 },
     messages: [
-      { id: "k1", who: "joan", text: "Finished a whole row without dropping a stitch!", hearts: 6 },
-      { id: "k2", who: "anne", text: "That's the hardest bit. Well done, Joan.", hearts: 3 },
+      { id: "k1", who: "priya", text: "We now set GAS goals with the patient before every injection clinic. Uptake has been good.", hearts: 6 },
+      { id: "k2", who: "grace", text: "Do you include an OT goal each time? We have found it helps with upper limb function.", hearts: 3 },
     ],
-    incoming: { id: "k3", who: "margaret", text: "Bringing my scarf to show you all tomorrow.", hearts: 2 },
+    incoming: { id: "k3", who: "hannah", text: "Sharing our splinting leaflet in the Library this week.", hearts: 2 },
   },
   {
-    id: "book", name: "One chapter club", why: "One chapter a week, together", lastMinutesAgo: 4300, conditionId: "stroke", visibility: "public",
-    activity: { text: "One chapter a week, together", kind: "chat" },
-    about: "One chapter a week, in print, large print or as an audiobook.",
-    cover: { tint: "#F6DDD3", ink: "#8F3520", initial: "O" },
-    tint: "#F6DDD3", ink: "#8F3520", members: 4, online: 1, faces: ["anne", "liwei", "samuel"], unread: 0, active: false,
-    challenge: { text: "This week: read one chapter of any book", done: 1, total: 4 },
+    id: "book", name: "Stroke Research Journal Club", why: "Monthly, online", lastMinutesAgo: 4300, conditionId: "stroke", visibility: "public",
+    activity: { text: "Next paper: thrombectomy beyond 24 hours", kind: "chat" },
+    about: "A monthly online journal club appraising new stroke research, with CPD reflection notes.",
+    cover: cover("JC"), ...neutral, members: 212, online: 1, faces: ["tomas", "michael", "elena"], unread: 0, active: false,
+    challenge: { text: "This month: appraise one paper", done: 18, total: 212 },
     messages: [
-      { id: "b1", who: "anne", text: "Large print copies are on the library shelf by the door.", hearts: 4 },
-      { id: "b2", who: "liwei", text: "I listened to mine as an audiobook. That counts!", hearts: 7 },
+      { id: "b1", who: "tomas", text: "Slides from last month's session are pinned in the Library.", hearts: 4 },
+      { id: "b2", who: "michael", text: "Could we cover glucose management in acute stroke next time?", hearts: 7 },
     ],
-    incoming: { id: "b3", who: "samuel", text: "Chapter three done. Slowly, but done.", hearts: 3 },
+    incoming: { id: "b3", who: "elena", text: "Seconded, and kidney function with contrast too.", hearts: 3 },
   },
 ];
 
@@ -246,54 +262,49 @@ export const SUGGESTED_GROUP_IDS: SuggestedGroupId[] = ["knit", "book"];
 
 /** What happened in a group today, shown as a small event in its chat. */
 export const groupEvents: Partial<Record<CommunityGroupId, string>> = {
-  garden: "Margaret started chess with Joan · 10:12 am",
-  music: "Priya set up Ludo for 7 pm · 9:40 am",
-  walk: "David made this group public · last week",
-  cook: "Samuel made this group public · in June",
+  garden: "Hannah Brooks pinned the ESD rota template · 10:12 am",
+  music: "Tomás Leal scheduled journal club for Thursday · 9:40 am",
+  walk: "Arjun Mehta made this group public · last week",
+  cook: "Hannah Brooks made this group public · in June",
 };
 
-/** A subgroup started by another member, with a letter for its cover and one line said in it. */
+/** A professional group started by another clinician, with initials for its cover and one line said in it. */
 function otherGroup(
   id: ConditionGroupId, name: string, conditionId: ConditionId, visibility: GroupVisibility, members: number, faces: PersonId[],
-  cover: { tint: string; ink: string }, activity: GroupActivity, about: string, said: string,
+  activity: GroupActivity, about: string, said: string,
 ): SampleGroup {
+  const initials = name.split(/\s+/).filter(word => /^[A-Z]/.test(word)).slice(0, 2).map(word => word[0]).join("");
   return {
-    id, name, about, cover: { ...cover, initial: name.charAt(0) }, tint: cover.tint, ink: cover.ink, members, online: 1, faces, unread: 0, active: false,
-    challenge: { text: "This week: say hello to someone new", done: 2, total: members },
+    id, name, about, cover: cover(initials || name.charAt(0)), ...neutral, members, online: 1, faces, unread: 0, active: false,
+    challenge: { text: "This month: introduce yourself and your service", done: 2, total: members },
     messages: [{ id: `${id}-1`, who: faces[0], text: said, hearts: 3 }],
-    incoming: { id: `${id}-2`, who: faces[1], text: "Welcome! Lovely to have you here.", hearts: 1 },
+    incoming: { id: `${id}-2`, who: faces[1], text: "Welcome to the group. Do share what your service is working on.", hearts: 1 },
     lastMinutesAgo: 600, conditionId, visibility, activity,
   };
 }
-const lilac = { tint: "#E9E2F4", ink: "#45357A" };
-const sky = { tint: "#DCECF4", ink: "#1F4E66" };
-const mint = { tint: "#E5EEE7", ink: "#173D2F" };
-const butter = { tint: "#FBEBC2", ink: "#6B5108" };
-const blush = { tint: "#FBE3DB", ink: "#8F3520" };
-const sand = { tint: "#F6EEDB", ink: "#7A5C22" };
 
 /**
- * Subgroups other members started inside each condition. The private ones ("Tuesday tea",
- * "Carers' corner") are here to prove the rule: the person is not in them, so the model never
- * shows, counts, searches or suggests them.
+ * Professional groups inside each condition that the clinician can browse and join (comment 14). The private ones
+ * ("Stroke Unit Leads", "PD Nurse Specialists") prove the rule: the clinician is not in them, so the model never shows,
+ * counts, searches or suggests them.
  */
 export const conditionGroups: SampleGroup[] = [
-  otherGroup("finding", "Finding words", "stroke", "public", 42, ["anne", "liwei", "samuel"], lilac, { text: "Slow, kind chat for aphasia", kind: "chat" }, "A slow, kind chat for anyone finding words hard after a stroke. Take all the time you need.", "Today's word was 'marmalade'. Took me a while, but I got there."),
-  otherGroup("young", "Young stroke survivors", "stroke", "public", 120, ["tomasz", "priya", "david"], sky, { text: "Back to work, kids, and more", kind: "chat" }, "For anyone who had a stroke young: work, children, friends and everything else.", "First full week back at work. Tired, but proud."),
-  otherGroup("tuesday-tea", "Tuesday tea", "stroke", "private", 4, ["joan", "liwei", "priya"], butter, { text: "Tea at 3 on Tuesdays", kind: "soon" }, "A private tea for four old friends.", "Same table as last week?"),
-  otherGroup("dance", "Dance for balance", "parkinsons", "public", 64, ["joan", "david", "anne"], lilac, { text: "Seated dance on Tuesdays", kind: "soon" }, "Seated and standing dance for balance and fun.", "Tuesday's waltz had us all smiling."),
-  otherGroup("tremor", "Tremor and tea", "parkinsons", "public", 23, ["margaret", "samuel", "liwei"], butter, { text: "Tips for steady cups", kind: "chat" }, "Tips for steady cups, and a natter while we drink them.", "A heavier mug really does help."),
-  otherGroup("steps", "Big steps walking", "parkinsons", "public", 31, ["tomasz", "priya", "joan"], sky, { text: "Walk together on Saturdays", kind: "soon" }, "Big steps, slow pace, good company.", "Saturday at 10 by the bandstand."),
-  otherGroup("pd-carers", "Carers' corner", "parkinsons", "private", 6, ["anne", "david", "samuel"], blush, { text: "A quiet place to talk", kind: "chat" }, "A private corner for people caring for someone.", "Thinking of you all this week."),
-  otherGroup("fatigue", "Fatigue friends", "ms", "public", 48, ["anne", "liwei", "david"], sky, { text: "Pacing tips that work", kind: "chat" }, "Pacing, rest and the tips that really work.", "Spoon count today: six. Spent them well."),
-  otherGroup("cool", "Cool and calm", "ms", "public", 19, ["priya", "samuel", "joan"], mint, { text: "Staying cool in summer", kind: "chat" }, "Staying cool when the weather isn't.", "Cooling scarves are back in the shops."),
-  otherGroup("yoga", "Seated yoga", "ms", "public", 37, ["margaret", "tomasz", "anne"], blush, { text: "Sessions on Thursdays", kind: "soon" }, "Gentle seated yoga, every Thursday.", "Thursday's stretch was just right."),
-  otherGroup("memory", "Memory makers", "brain", "public", 26, ["david", "joan", "liwei"], butter, { text: "Daily notes and reminders", kind: "chat" }, "Notes, lists and reminders that help.", "My fridge is now mostly sticky notes."),
-  otherGroup("work", "Back to work", "brain", "public", 33, ["tomasz", "samuel", "anne"], mint, { text: "First weeks back", kind: "chat" }, "For the first weeks back at work.", "Asked for a quieter desk. They said yes!"),
-  otherGroup("sport", "Adaptive sport", "spine", "public", 41, ["samuel", "priya", "david"], blush, { text: "Try-it days near you", kind: "soon" }, "Wheelchair sport and try-it days near you.", "Tried wheelchair tennis. Hooked."),
-  otherGroup("owls", "Night owls", "spine", "public", 15, ["liwei", "anne", "joan"], lilac, { text: "For the 3 am wake-ups", kind: "chat" }, "For the 3 am wake-ups. Someone is always here.", "Anyone else up? Kettle's on."),
-  otherGroup("new-hip", "New hip club", "joint", "public", 58, ["margaret", "david", "samuel"], sand, { text: "Weeks one to six", kind: "chat" }, "The first six weeks with a new hip.", "Week three: round the garden twice."),
-  otherGroup("knee", "Knee buddies", "joint", "public", 29, ["joan", "tomasz", "priya"], sky, { text: "Exercise check-ins", kind: "chat" }, "Check in after your knee exercises.", "Did all my bends today."),
+  otherGroup("finding", "Hyperacute Stroke Care", "stroke", "public", 154, ["imani", "tomas", "hannah"], { text: "Thrombolysis and thrombectomy pathways", kind: "chat" }, "Door-to-needle times, thrombectomy referral and the first 72 hours on the hyperacute stroke unit.", "Our door-to-needle median is down to 38 minutes after the pre-alert changes."),
+  otherGroup("young", "Stroke Secondary Prevention", "stroke", "public", 121, ["tomas", "michael", "imani"], { text: "AF, lipids and blood pressure targets", kind: "chat" }, "Blood pressure, lipid and AF management after stroke and TIA, in hospital and primary care.", "Sharing our nurse-led blood pressure follow-up template."),
+  otherGroup("tuesday-tea", "Stroke Unit Leads", "stroke", "private", 12, ["ruth", "michael", "priya"], { text: "Monthly leads meeting", kind: "soon" }, "A private group for stroke unit clinical leads.", "Agenda for the regional leads meeting is up."),
+  otherGroup("dance", "Parkinson's Medication Safety", "parkinsons", "public", 88, ["arjun", "kwame", "imani"], { text: "Time-critical medicines in hospital", kind: "chat" }, "Getting Parkinson's medicines on time in hospital: audits, e-prescribing alerts and nil-by-mouth plans.", "Our missed-dose audit improved after we added ward alerts."),
+  otherGroup("tremor", "Movement Disorders MDT", "parkinsons", "public", 57, ["arjun", "priya", "hannah"], { text: "Monthly virtual MDT", kind: "soon" }, "Virtual case discussion for complex Parkinson's and atypical parkinsonism.", "Two complex cases for next week's MDT, notes in the thread."),
+  otherGroup("steps", "Falls and Gait in Parkinson's", "parkinsons", "public", 46, ["priya", "grace", "joseph"], { text: "Cueing strategies", kind: "chat" }, "Physiotherapy and OT approaches to freezing, gait and falls prevention.", "Laser cue shoes trial results are in: mixed, but promising for freezing."),
+  otherGroup("pd-carers", "PD Nurse Specialists", "parkinsons", "private", 21, ["grace", "kwame", "joseph"], { text: "Caseload support", kind: "chat" }, "A private group for Parkinson's nurse specialists.", "Caseload numbers survey closes Friday."),
+  otherGroup("fatigue", "MS Fatigue and Rehabilitation", "ms", "public", 63, ["grace", "priya", "kwame"], { text: "Energy management programmes", kind: "chat" }, "Fatigue management, exercise and vocational rehabilitation in multiple sclerosis.", "Our group energy-management course now runs online too."),
+  otherGroup("cool", "MS Disease-Modifying Therapy", "ms", "public", 49, ["arjun", "michael", "sarah"], { text: "Monitoring schedules", kind: "chat" }, "Choosing, starting and monitoring disease-modifying therapies.", "Updated monitoring schedule for the newer DMTs attached."),
+  otherGroup("yoga", "MS Mobility Clinic", "ms", "public", 31, ["priya", "joseph", "grace"], { text: "Thursday case review", kind: "soon" }, "Gait, spasticity and mobility aids in MS.", "Functional electrical stimulation referrals: who funds yours?"),
+  otherGroup("memory", "Cognitive Rehabilitation", "brain", "public", 44, ["kwame", "hannah", "grace"], { text: "Memory strategy groups", kind: "chat" }, "Assessment and rehabilitation of memory, attention and executive function after brain injury.", "Sharing our memory strategy group outline."),
+  otherGroup("work", "Vocational Rehabilitation", "brain", "public", 38, ["grace", "kwame", "joseph"], { text: "Return to work after ABI", kind: "chat" }, "Supporting return to work and study after acquired brain injury.", "Phased return plan template is in the Library."),
+  otherGroup("sport", "Spinal Cord Injury Rehab", "spine", "public", 41, ["joseph", "priya", "grace"], { text: "Seating and posture", kind: "chat" }, "Rehabilitation, seating and community reintegration after spinal cord injury.", "New seating clinic referral form, comments welcome."),
+  otherGroup("owls", "Neurogenic Bladder and Bowel", "spine", "public", 22, ["imani", "elena", "ruth"], { text: "Continence pathways", kind: "chat" }, "Bladder and bowel management after spinal cord injury.", "Our bowel care protocol is due for review: volunteers?"),
+  otherGroup("new-hip", "Joint Replacement Pathways", "joint", "public", 72, ["joseph", "grace", "priya"], { text: "Enhanced recovery", kind: "chat" }, "Enhanced recovery, prehab and early mobilisation after hip and knee replacement.", "Day-case hip numbers are up since we started prehab classes."),
+  otherGroup("knee", "MSK Physiotherapy Practice", "joint", "public", 66, ["joseph", "priya", "sophie"], { text: "Exercise prescription", kind: "chat" }, "Exercise prescription and follow-up after knee replacement and for osteoarthritis.", "Virtual follow-up audit: 82% satisfied, full results shared."),
 ];
 export const CONDITION_GROUP_IDS = conditionGroups.map(group => group.id) as ConditionGroupId[];
 
@@ -334,33 +345,28 @@ export type SampleGame = {
   when: string;
   watchers: PersonId[];
 };
-export const sampleGames: SampleGame[] = [
-  {
-    id: "garden-chess", groupId: "garden", type: "chess", players: ["margaret", "joan"], withYou: false, state: "playing", when: "10:12 am", watchers: ["anne", "samuel"],
-    moves: ["e2e4", "e7e5", "g1f3", "b8c6", "f1c4", "f8c5", "c2c3", "g8f6", "d2d3", "d7d6", "e1g1", "e8g8", "f1e1", "a7a6", "c4b3", "c5a7", "h2h3", "h7h6", "b1d2", "f8e8", "d2f1", "c8e6", "f1g3", "d8d7", "b3c2", "a8d8", "d3d4"],
-  },
-  { id: "margaret-chess", groupId: "garden", type: "chess", players: ["margaret"], withYou: true, state: "playing", when: "10:12 am", watchers: ["anne", "samuel", "joan"], moves: ["e2e4", "e7e5", "g1f3", "b8c6"] },
-  { id: "music-ludo", groupId: "music", type: "ludo", players: ["priya", "joan", "liwei"], withYou: false, state: "scheduled", when: "Tonight at 7 pm", watchers: [], moves: [] },
-];
+// The clinician edition has no games (comment 7): the professional groups start with none going.
+export const sampleGames: SampleGame[] = [];
 /** Quick phrases for the people watching a game, and the answer each one gets. */
 export const watcherPhrases: { label: string; tone: QuickTone; reply: { who: PersonId; text: string } }[] = [
-  { label: "Good move!", tone: "amber", reply: { who: "margaret", text: "Flattery will not save your knight." } },
-  { label: "Hmm, let me think", tone: "mint", reply: { who: "anne", text: "Take your time, love. No clock!" } },
-  { label: "Cup of tea break?", tone: "rose", reply: { who: "margaret", text: "Always. Two sugars, please." } },
+  { label: "Good move!", tone: "amber", reply: { who: "hannah", text: "Flattery will not save your knight." } },
+  { label: "Hmm, let me think", tone: "mint", reply: { who: "grace", text: "Take your time, love. No clock!" } },
+  { label: "Cup of tea break?", tone: "rose", reply: { who: "hannah", text: "Always. Two sugars, please." } },
 ];
 
 /* ---------------------------------------------------------- start a group */
 
 export type GroupTheme = { id: ThemeId; label: string; names: [string, string, string]; image?: string; tint: string; ink: string };
+// The kinds of professional group a clinician can start. (The ids are the patient edition's internal keys.)
 export const groupThemes: GroupTheme[] = [
-  { id: "gardening", label: "Gardening", names: ["Garden gang", "Green fingers", "Windowsill growers"], image: art("fb2175989c4397ad5f421824e41a5e87"), tint: "#CFE8C9", ink: "#1C4A3C" },
-  { id: "walking", label: "Walking", names: ["Morning walkers", "One step club", "Round the block"], image: art("41e5e4e8b1bf6c9bbe7330cc69485ef5"), tint: "#CFE6F2", ink: "#1F4E66" },
-  { id: "cooking", label: "Cooking", names: ["One-handed cooks", "Sunday roast club", "Kitchen table"], image: art("91162a45a080841062c0f9de0b0bc8fd"), tint: "#FBE3B8", ink: "#6B5108" },
-  { id: "music", label: "Music", names: ["Kitchen singalong", "Golden oldies", "Radio friends"], image: art("242c86dad4e267c11919a79438078c19"), tint: "#E4DAF3", ink: "#45357A" },
-  { id: "books", label: "Books", names: ["Slow readers", "One chapter club", "Large print gang"], tint: "#F6DDD3", ink: "#8F3520" },
-  { id: "family", label: "Family", names: ["Proud grandparents", "Family album", "School run crew"], tint: "#FBE3DB", ink: "#8F3520" },
-  { id: "crafts", label: "Crafts", names: ["Knit and natter", "Makers corner", "Paint club"], tint: "#FBEBC2", ink: "#6B5108" },
-  { id: "chatting", label: "Just chatting", names: ["Tea and a natter", "The regulars", "Night owls"], tint: "#E3EFE6", ink: "#1C4A3C" },
+  { id: "gardening", label: "Clinical practice", names: ["Stroke Rehab Practice", "Neuro Therapy Forum", "Community Rehab Leads"], tint: "#EEF0F2", ink: "#27323D" },
+  { id: "walking", label: "Case discussion", names: ["Complex Case Review", "Virtual MDT", "Case of the Week"], tint: "#EEF0F2", ink: "#27323D" },
+  { id: "cooking", label: "Service improvement", names: ["Pathway Redesign", "Audit and QI", "Service Leads"], tint: "#EEF0F2", ink: "#27323D" },
+  { id: "music", label: "Research", names: ["Research Collaborative", "Trial Recruiters", "Evidence Review"], tint: "#EEF0F2", ink: "#27323D" },
+  { id: "books", label: "Journal club", names: ["Journal Club", "Paper of the Month", "Critical Appraisal"], tint: "#EEF0F2", ink: "#27323D" },
+  { id: "family", label: "Education", names: ["Teaching and Training", "CPD Exchange", "Registrar Teaching"], tint: "#EEF0F2", ink: "#27323D" },
+  { id: "crafts", label: "Peer support", names: ["Clinician Peer Support", "New Consultants", "Reflective Practice"], tint: "#EEF0F2", ink: "#27323D" },
+  { id: "chatting", label: "General discussion", names: ["Open Forum", "Network Lounge", "Clinicians' Corner"], tint: "#EEF0F2", ink: "#27323D" },
 ];
 export const THEME_IDS: ThemeId[] = groupThemes.map(theme => theme.id);
 
@@ -371,13 +377,13 @@ export type StartThemeId = ThemeId | "games";
 export type StartTheme = Omit<GroupTheme, "id"> & { id: StartThemeId };
 export const gamesTheme: StartTheme = { id: "games", label: "Games", names: ["Board game club", "Chess and tea", "Friday games"], image: checkerCover, tint: "#E5EEE7", ink: "#173D2F" };
 /** The themes "What's it about?" offers, in order. Crafts stays readable for groups started before. */
-export const startThemes: StartTheme[] = [...groupThemes.slice(0, 4), gamesTheme, ...groupThemes.filter(theme => theme.id === "books" || theme.id === "family" || theme.id === "chatting")];
+export const startThemes: StartTheme[] = [...groupThemes.slice(0, 4), ...groupThemes.filter(theme => theme.id === "books" || theme.id === "family" || theme.id === "chatting")];
 export const START_THEME_IDS: StartThemeId[] = [...THEME_IDS, "games"];
-/** The example friends who can be asked along, and the two ticked to begin with. */
-export const inviteFriends: PersonId[] = ["margaret", "joan", "anne", "david", "priya", "samuel"];
-export const defaultInvites: PersonId[] = ["margaret", "joan"];
-export const groupHellos = ["Hello everyone!", "Welcome to the group.", "Who has news?"];
-export const startedGroupChallenge = "This week: share one thing that made you smile";
+/** The example connections who can be invited, and the two ticked to begin with. */
+export const inviteFriends: PersonId[] = ["hannah", "ruth", "grace", "kwame", "priya", "joseph"];
+export const defaultInvites: PersonId[] = ["hannah", "grace"];
+export const groupHellos = ["Welcome, everyone.", "Please introduce yourself and your service.", "What are you working on this month?"];
+export const startedGroupChallenge = "This month: introduce yourself and your service";
 export const GROUP_NAME_LIMIT = 40;
 
 /* -------------------------------------------------------------------- feed */
@@ -404,96 +410,79 @@ export type SamplePost = {
   gentle?: string;
 };
 
+// The clinician feed: posts from other clinicians in the network, about practice, services and research (comment 10).
+// The feed shows a post only when its author's role is "clinician" (isClinician), so the unverified account's post below
+// never reaches it, blocked or not.
 export const feedPosts: SamplePost[] = [
   {
-    // Gary is blocked when the preview starts, so this post only shows once he is unblocked.
-    id: "p-gary", who: "gary", where: "Joined 2 days ago", when: "5 minutes ago",
-    text: "Message me for a herbal cure that fixes stroke damage in two weeks. Only £49!",
+    id: "p-gary", who: "gary", where: "Unverified account", when: "5 minutes ago",
+    text: "Clinicians! Earn £500 a week recommending our stroke recovery supplement to your patients. Message me.",
     reactions: [],
     comments: [],
     quickReplies: [],
   },
   {
-    id: "p-margaret", who: "margaret", group: "garden", where: "Leeds", when: "20 minutes ago",
-    text: "First tomatoes off the windowsill! Picked them with my left hand, thank you very much.",
-    photo: photos.tomatoes,
-    reactions: [{ kind: "love", count: 24 }, { kind: "welldone", count: 11 }, { kind: "metoo", count: 3 }],
+    id: "p-hannah", who: "hannah", group: "garden", where: "Bath Community Therapy Service", when: "20 minutes ago",
+    text: "Three months into our seven-day early supported discharge service: median time to first therapy visit is down from 4 days to 1, and readmissions at 30 days have halved. Happy to share the rota model and the dysphagia screening changes we made alongside it.",
+    reactions: [{ kind: "welldone", count: 24 }, { kind: "love", count: 11 }, { kind: "metoo", count: 3 }],
     comments: [
-      { who: "joan", text: "Left hand doing the picking! That's brilliant." },
-      { who: "anne", text: "They look lovely. Mine are still green." },
-      { who: "samuel", text: "Tomato tart on the way, I hope." },
-      { who: "priya", text: "Well done you, Margaret." },
-      { who: "liwei", text: "My grandson would eat the lot." },
-      { who: "david", text: "Save me one, Margaret." },
+      { who: "ruth", text: "Impressive numbers. How did you staff weekend SLT cover?" },
+      { who: "grace", text: "We are planning the same in Bristol. Would love the rota." },
+      { who: "joseph", text: "Did you track patient-reported outcomes too?" },
+      { who: "priya", text: "Great work, Hannah. Sharing with our service lead." },
     ],
     peek: true,
-    quickReplies: ["Lovely!", "Well done!", "Save me one!"],
+    quickReplies: ["Great results", "Please share the rota", "Thanks for sharing"],
   },
   {
-    id: "p-tomasz", who: "tomasz", where: "New here", when: "1 hour ago",
-    text: "First week home. A bit scared, if I'm honest. What helped you settle in?",
-    reactions: [{ kind: "withyou", count: 18 }, { kind: "metoo", count: 7 }],
+    id: "p-tomas", who: "tomas", where: "St Bartholomew Heart Centre", when: "1 hour ago",
+    text: "Question for the network: for patients with AF detected after an ischaemic stroke, when are you starting anticoagulation? We are reviewing our timing guidance against the latest trial data and would value how other units decide.",
+    reactions: [{ kind: "welldone", count: 18 }, { kind: "metoo", count: 7 }],
     comments: [
-      { who: "anne", text: "My first week was the hardest too. It does get lighter, promise." },
-      { who: "david", text: "Come walking with us. Biscuit loves new people." },
-      { who: "margaret", text: "Little routines helped me. Tea at the same time each morning." },
-      { who: "priya", text: "Be gentle with yourself. Resting counts as doing something." },
-      { who: "joan", text: "I wrote down one good thing each night. It helped more than I expected." },
-      { who: "samuel", text: "Let people help with the small jobs. They want to." },
-      { who: "liwei", text: "Welcome, Tomasz. You're not on your own here." },
-      { who: "anne", text: "Pop into the lounge whenever you like. Someone's always about." },
-      { who: "margaret", text: "We're glad you're here." },
+      { who: "imani", text: "We follow the infarct-size approach, with early starts for minor strokes. Happy to share our protocol." },
+      { who: "michael", text: "Worth adding renal function to the checklist; we have had a few dosing issues." },
+      { who: "elena", text: "Agree with Michael. We review eGFR at 48 hours before choosing the agent." },
     ],
-    quickReplies: ["Welcome, Tomasz.", "You're not alone.", "One day at a time."],
+    quickReplies: ["Following this", "Will share our protocol", "Good question"],
   },
   {
-    id: "p-priya", who: "priya", group: "music", where: "Leicester", when: "2 hours ago",
-    text: "Sang the whole chorus this morning, start to finish. The words came slowly, but every one of them came out.",
-    voice: { seconds: 12 },
+    id: "p-priya", who: "priya", group: "walk", where: "Northfield Neuro Rehab Centre", when: "2 hours ago",
+    text: "Our falls clinic audit for people with Parkinson's is done: adding a structured cueing session to the first appointment reduced reported freezing episodes at 12 weeks. Slides and the cueing handout are now in the Library under Parkinson's.",
     reactions: [{ kind: "welldone", count: 12 }, { kind: "love", count: 8 }],
     comments: [
-      { who: "joan", text: "Que Sera, Sera next?" },
-      { who: "liwei", text: "Every word! Wonderful." },
-      { who: "margaret", text: "I'd have loved to hear it." },
+      { who: "arjun", text: "Excellent. Could we bring this to the movement disorders MDT next month?" },
+      { who: "grace", text: "Downloaded the handout already, thank you." },
     ],
-    quickReplies: ["Wonderful!", "Well done!", "Sing it again!"],
+    quickReplies: ["Useful, thanks", "Saved to my pages", "Let's discuss at MDT"],
   },
   {
-    // A hard day: gentle mode (on to begin with) keeps it covered until it is tapped.
-    id: "p-samuel", who: "samuel", group: "cook", where: "Cardiff", when: "3 hours ago",
-    text: "Rough day. I couldn't manage the stairs this morning and it felt like I'd gone right back to the start.",
-    gentle: "a hard day",
-    reactions: [{ kind: "withyou", count: 14 }, { kind: "metoo", count: 6 }],
+    id: "p-kwame", who: "kwame", where: "Southbank Clinical Psychology", when: "3 hours ago",
+    text: "Reminder for anyone running stroke clinics: around a third of patients have depression in the first year. We have put together a one-page screening and referral flow for non-psychology colleagues. Feedback welcome before we publish it.",
+    reactions: [{ kind: "welldone", count: 14 }, { kind: "metoo", count: 6 }],
     comments: [
-      { who: "anne", text: "Those days pass. You haven't gone back, Samuel." },
-      { who: "priya", text: "I had one last month. Be kind to yourself today." },
-      { who: "david", text: "Stairs tomorrow, with a cup of tea at the top." },
+      { who: "grace", text: "Really useful for our community team. Does it cover aphasia-friendly screening?" },
+      { who: "hannah", text: "Happy to help adapt it for people with aphasia." },
     ],
-    quickReplies: ["With you, Samuel.", "Those days pass.", "Be kind to yourself."],
+    quickReplies: ["Happy to review", "Very useful", "Thank you"],
   },
   {
-    id: "p-joan", who: "joan", where: "Whitby", when: "3 hours ago",
-    text: "Buttoned my own cardigan this morning. All five buttons. It took ten minutes and I didn't mind one bit.",
-    win: true,
+    id: "p-ruth", who: "ruth", where: "Whitby Cardiac Rehabilitation", when: "3 hours ago",
+    text: "We now run a joint cardiac and stroke rehabilitation exercise class twice a week. Uptake among stroke patients with heart disease has doubled since we stopped referring them to two separate programmes.",
     reactions: [{ kind: "welldone", count: 15 }, { kind: "love", count: 9 }, { kind: "metoo", count: 4 }],
     comments: [
-      { who: "margaret", text: "All five! Well done, Joan." },
-      { who: "anne", text: "Buttons are the worst. Brilliant." },
-      { who: "samuel", text: "Ten minutes well spent." },
-      { who: "priya", text: "Me too, last week. Such a good feeling." },
+      { who: "tomas", text: "Great model. Who supervises the exercise prescription?" },
+      { who: "priya", text: "We would love to visit and see the class." },
     ],
-    quickReplies: ["Well done, Joan!", "Me too!", "Brilliant!"],
+    quickReplies: ["Great idea", "How is it funded?", "Interested"],
   },
   {
-    // Mentions "hospital", one of the hidden words to begin with, so it waits behind a note.
-    id: "p-anne", who: "anne", where: "Bath", when: "4 hours ago",
-    text: "Back at the hospital for a check-up this morning. All fine, just tired now. Feet up with a crossword.",
+    id: "p-sarah", who: "sarah", where: "Northern Cancer Centre", when: "4 hours ago",
+    text: "Our survivorship clinic is looking for neuro and stroke colleagues to co-author a short guide on stroke risk after radiotherapy to the head and neck. Message me if you would like to be involved.",
     reactions: [{ kind: "withyou", count: 6 }, { kind: "love", count: 4 }],
     comments: [
-      { who: "margaret", text: "Glad it all went well, Anne." },
-      { who: "david", text: "Rest up. Crosswords count as therapy." },
+      { who: "michael", text: "Count me in for the vascular risk section." },
     ],
-    quickReplies: ["Glad it's fine!", "Rest well, Anne.", "Thinking of you."],
+    quickReplies: ["Interested", "Will message you", "Sharing with colleagues"],
   },
 ];
 export const FEED_POST_IDS = feedPosts.map(post => post.id);
@@ -513,12 +502,12 @@ export const lounge = {
   /** One event every this many milliseconds, until the script has run. */
   everyMs: 2600,
   starter: "What are you looking forward to this week?",
-  faces: ["margaret", "david", "anne", "tomasz"] as PersonId[],
+  faces: ["hannah", "kwame", "grace", "tomas"] as PersonId[],
   messages: [
-    { id: "l1", who: "margaret", text: "My granddaughter visits on Saturday. I'm going to pour the tea myself.", hearts: 6, minutesAgo: 9 },
-    { id: "l2", who: "tomasz", note: "New member", text: "First week home. A bit scared, if I'm honest.", hearts: 9, minutesAgo: 6 },
-    { id: "l3", who: "anne", text: "My first week was the hardest too. It does get lighter, promise.", hearts: 5, minutesAgo: 5 },
-    { id: "l4", who: "david", text: "Come walking with us on Wednesday, Tomasz. Seven o'clock by the harbour. Biscuit loves new people.", hearts: 4, minutesAgo: 3 },
+    { id: "l1", who: "hannah", text: "My granddaughter visits on Saturday. I'm going to pour the tea myself.", hearts: 6, minutesAgo: 9 },
+    { id: "l2", who: "tomas", note: "New member", text: "First week home. A bit scared, if I'm honest.", hearts: 9, minutesAgo: 6 },
+    { id: "l3", who: "grace", text: "My first week was the hardest too. It does get lighter, promise.", hearts: 5, minutesAgo: 5 },
+    { id: "l4", who: "kwame", text: "Come walking with us on Wednesday, Tomasz. Seven o'clock by the harbour. Biscuit loves new people.", hearts: 4, minutesAgo: 3 },
   ] as LoungeMessage[],
   /** The house rules beside the lounge. */
   rules: [
@@ -529,21 +518,21 @@ export const lounge = {
   script: [
     { kind: "typing", who: "priya" },
     { kind: "message", message: { id: "l5", who: "priya", text: "Morning all! Sun's out in Leicester today.", hearts: 2 } },
-    { kind: "arrive", who: "joan", text: "Joan just came in" },
-    { kind: "typing", who: "joan" },
-    { kind: "message", message: { id: "l6", who: "joan", text: "Kettle's on. Who wants one?", hearts: 4 } },
-    { kind: "typing", who: "david" },
-    { kind: "message", message: { id: "l7", who: "david", text: "Biscuit says hello to the newcomers.", photo: photos.dog, hearts: 7 } },
-    { kind: "arrive", who: "samuel", text: "Samuel just came in" },
-    { kind: "typing", who: "anne" },
-    { kind: "message", message: { id: "l8", who: "anne", text: "Tomasz, how was your first night home?", hearts: 3 } },
+    { kind: "arrive", who: "ruth", text: "Joan just came in" },
+    { kind: "typing", who: "ruth" },
+    { kind: "message", message: { id: "l6", who: "ruth", text: "Kettle's on. Who wants one?", hearts: 4 } },
+    { kind: "typing", who: "kwame" },
+    { kind: "message", message: { id: "l7", who: "kwame", text: "Biscuit says hello to the newcomers.", photo: photos.dog, hearts: 7 } },
+    { kind: "arrive", who: "joseph", text: "Samuel just came in" },
+    { kind: "typing", who: "grace" },
+    { kind: "message", message: { id: "l8", who: "grace", text: "Tomasz, how was your first night home?", hearts: 3 } },
   ] as LoungeEvent[],
   waves: [
-    { who: "tomasz", note: "Dover · new this week" },
-    { who: "margaret", note: "Leeds" },
-    { who: "anne", note: "Bath" },
+    { who: "tomas", note: "Dover · new this week" },
+    { who: "hannah", note: "Leeds" },
+    { who: "grace", note: "Bath" },
     { who: "priya", note: "Leicester" },
-    { who: "joan", note: "Whitby" },
+    { who: "ruth", note: "Whitby" },
   ] as { who: PersonId; note: string }[],
   poll: {
     question: "What's in your mug right now?",
@@ -556,22 +545,23 @@ export const lounge = {
   /** `to` is who a reply is for: it is left out while that person is out of sight. */
   quickReplies: [
     { label: "Hello everyone", text: "Hello everyone!", tone: "mint" },
-    { label: "Welcome, Tomasz", text: "Welcome, Tomasz!", tone: "blue", to: "tomasz" },
-    { label: "Well done, Margaret", text: "Well done, Margaret!", tone: "amber", to: "margaret" },
+    { label: "Welcome, Tomasz", text: "Welcome, Tomasz!", tone: "blue", to: "tomas" },
+    { label: "Well done, Margaret", text: "Well done, Margaret!", tone: "amber", to: "hannah" },
     { label: "Thinking of you all", text: "Thinking of you all.", tone: "lilac" },
   ] as { label: string; text: string; tone: QuickTone; to?: PersonId }[],
 };
 export const POLL_OPTION_IDS = lounge.poll.options.map(option => option.id);
 
 export const groupQuickReplies: { label: string; text: string; tone: QuickTone }[] = [
-  { label: "Lovely!", text: "Lovely!", tone: "rose" },
-  { label: "Well done", text: "Well done!", tone: "amber" },
-  { label: "Me too", text: "Me too.", tone: "blue" },
+  { label: "Thanks for sharing", text: "Thanks for sharing.", tone: "mint" },
+  { label: "Could you share the protocol?", text: "Could you share the protocol or template?", tone: "blue" },
+  { label: "Happy to discuss", text: "Happy to discuss this at the next MDT.", tone: "amber" },
 ];
 
 /* ---------------------------------------------------------- Sunday circle */
 
-export type CircleSeat = PersonId | "alira" | "you";
+/** (The patient edition's circle seats; the clinician edition replaces the circle with group weekly sessions.) */
+export type CircleSeat = "hannah" | "kwame" | "tomas" | "grace" | "priya" | "joseph" | "ruth" | "michael" | "alira" | "you";
 /**
  * Who sits in the circle and how the teacup goes round. What the circle is about (its event: a film night, a
  * book club, football together …), what everyone says and what comes up next are in circle-events.ts.
@@ -580,11 +570,11 @@ export const circle = {
   /** The teacup moves on this often, unless it is with you. */
   everyMs: 3400,
   /** Who speaks next. "you" is skipped until you have taken your seat. */
-  order: ["alira", "margaret", "david", "priya", "tomasz", "you", "joan", "anne", "liwei", "samuel"] as CircleSeat[],
+  order: ["alira", "hannah", "kwame", "priya", "tomas", "you", "ruth", "grace", "michael", "joseph"] as CircleSeat[],
   /** Where each one sits: ten places round the circle, clockwise from the top. */
-  seats: { alira: 0, david: 1, liwei: 2, tomasz: 3, priya: 4, you: 5, anne: 6, samuel: 7, margaret: 8, joan: 9 } as Record<CircleSeat, number>,
+  seats: { alira: 0, kwame: 1, michael: 2, tomas: 3, priya: 4, you: 5, grace: 6, joseph: 7, hannah: 8, ruth: 9 } as Record<CircleSeat, number>,
   /** Lines that send a little warmth floating up when they are said. */
-  warmLines: ["margaret", "priya"] as CircleSeat[],
+  warmLines: ["hannah", "priya"] as CircleSeat[],
   hello: "Hello everyone. Glad to be here.",
 };
 /** Every seat in the circle, the person's own included. */
@@ -592,40 +582,43 @@ export const CIRCLE_SEATS = Object.keys(circle.seats).length;
 
 /* ----------------------------------------------------------------- friends */
 
-// Who is who when the preview starts. Each example person is in one place only:
-//   friends            David, Margaret and Anne (Joan's and Li Wei's mutual friends)
-//   asking to be yours Joan and Li Wei
-//   asked by you       Tomasz, two days ago
-//   people you may know Samuel and Priya
-//   blocked            Gary, three days ago
+// My Network when the preview starts (comment 5). Each example clinician is in one place only:
+//   connections         Kwame Mensah, Hannah Brooks, Grace Whitlow and Imani Clarke
+//   asking to connect   Ruth Calloway and Michael Chau
+//   requested by you    Tomás Leal, two days ago
+//   people you may know Joseph Hartley and Priya Raman
+//   not yet connected   everyone else in the directory (Sophie, Sarah, Elena, Arjun)
+//   blocked             Gary, an unverified account, three days ago
+// The clinician directory (/clinicians) reads and changes the same state, so the two always agree.
 
 export type FriendsTab = "requests" | "sent" | "friends" | "blocked";
 export const FRIENDS_TABS: FriendsTab[] = ["requests", "sent", "friends", "blocked"];
-export const friendsTabLabels: Record<FriendsTab, string> = { requests: "For you", sent: "Sent", friends: "Friends", blocked: "Blocked" };
+export const friendsTabLabels: Record<FriendsTab, string> = { requests: "Invitations", sent: "Sent", friends: "Connections", blocked: "Blocked" };
 
-/** The friends the person has to begin with, and how each one is doing right now. */
+/** The connections the clinician has to begin with, and how each one is doing right now. */
 export type StartFriend = { who: PersonId; status: string; online: boolean };
 export const startFriends: StartFriend[] = [
-  { who: "david", status: "Online now", online: true },
-  { who: "margaret", status: "Active 1 hour ago", online: false },
-  { who: "anne", status: "Active yesterday", online: false },
+  { who: "kwame", status: "Online now", online: true },
+  { who: "hannah", status: "Active 1 hour ago", online: false },
+  { who: "grace", status: "Active yesterday", online: false },
+  { who: "imani", status: "Active today", online: false },
 ];
 
-export type IncomingRequestId = "joan" | "liwei";
+export type IncomingRequestId = "ruth" | "michael";
 export type IncomingRequest = { who: IncomingRequestId; where: string; mutual: PersonId[]; mutualText: string; note: string };
-/** Friend requests waiting for the person. */
+/** Connection requests waiting for the clinician. */
 export const incomingRequests: IncomingRequest[] = [
-  { who: "joan", where: "Whitby · in Garden gang with you", mutual: ["margaret", "anne"], mutualText: "Margaret and Anne are friends of yours", note: "Saw you in Garden gang. Fancy being friends?" },
-  { who: "liwei", where: "Manchester · sits near you in Sunday circle", mutual: ["david"], mutualText: "David is a friend of yours", note: "" },
+  { who: "ruth", where: "Cardiac rehabilitation nurse · Whitby · in Stroke Rehabilitation Network with you", mutual: ["hannah", "grace"], mutualText: "Hannah Brooks and Grace Whitlow are connections of yours", note: "We both run joint cardiac and stroke rehab. Would be good to connect." },
+  { who: "michael", where: "Consultant diabetologist · Manchester · in Young Stroke Clinicians with you", mutual: ["kwame"], mutualText: "Kwame Mensah is a connection of yours", note: "" },
 ];
 export const INCOMING_REQUEST_IDS: IncomingRequestId[] = incomingRequests.map(request => request.who);
 
-/** Requests the person sent before this visit, still waiting for a yes. */
-export const startSent: { who: PersonId; daysAgo: number }[] = [{ who: "tomasz", daysAgo: 2 }];
+/** Requests the clinician sent before this visit, still waiting for an answer. */
+export const startSent: { who: PersonId; daysAgo: number }[] = [{ who: "tomas", daysAgo: 2 }];
 
 export const friendSuggestions: { who: PersonId; why: string }[] = [
-  { who: "samuel", why: "Also in One-handed cooks" },
-  { who: "priya", why: "Friends with David and Joan" },
+  { who: "joseph", why: "Also in Aphasia and Dysphagia Practice Group" },
+  { who: "priya", why: "Connected with Kwame Mensah and Hannah Brooks" },
 ];
 
 /** People blocked before this visit. */
@@ -633,8 +626,8 @@ export const startBlocked: { who: MemberId; daysAgo: number }[] = [{ who: "gary"
 
 /* ---------------------------------------------------------------- messages */
 
-// Messages between the person and their friends. The friends' words are examples; anything the
-// person writes stays on this device, and a friend's answer is an example too.
+// Messages between the clinician and their connections (comment 23). The colleagues' words are examples; anything the
+// clinician writes stays on this device, and a colleague's answer is an example too.
 
 /** One line in a conversation, `minutesAgo` before the page opened. A voice note has its words as `text`. */
 export type DirectLine = { id: string; from: "them" | "you"; text: string; minutesAgo: number; voice?: { seconds: number } };
@@ -653,62 +646,62 @@ export type Conversation = {
 
 export const conversations: Conversation[] = [
   {
-    who: "margaret", unread: 2,
+    who: "hannah", unread: 2,
     lines: [
-      { id: "dm-m1", from: "you", text: "Those tomatoes look wonderful. Are you saving any?", minutesAgo: 24 },
-      { id: "dm-m2", from: "them", text: "The rest are going in a tart for Saturday. My granddaughter is helping.", minutesAgo: 13 },
-      { id: "dm-m3", from: "them", text: "I promised you one, so I kept the best one for you.", minutesAgo: 12 },
+      { id: "dm-m1", from: "you", text: "Your ESD results are impressive. Could you share the weekend rota model with our team?", minutesAgo: 24 },
+      { id: "dm-m2", from: "them", text: "Of course. I'll upload it to the Library under Stroke, in the network's folder, this afternoon.", minutesAgo: 13 },
+      { id: "dm-m3", from: "them", text: "Happy to join a call with your service lead next week if that helps.", minutesAgo: 12 },
     ],
-    reply: "You're very welcome. I'll bring it round on Sunday, with a slice of the tart.",
-    quickReplies: ["Thank you", "That's lovely to hear", "Speak soon"],
-    about: "Gardener, grandmother and proud owner of the first tomatoes of the year.",
+    reply: "Great. Thursday at 1 pm works for me. I'll send an invite.",
+    quickReplies: ["Thank you", "Thursday works", "I'll send an invite"],
+    about: "Speech and language therapist specialising in aphasia and dysphagia after stroke, and communication support in dementia.",
     memberSince: "March 2026", friendsSince: "September 2026",
   },
   {
-    who: "david", unread: 1,
+    who: "kwame", unread: 1,
     lines: [
-      { id: "dm-d1", from: "you", text: "How did Biscuit get on at the vet?", minutesAgo: 180 },
-      { id: "dm-d2", from: "them", text: "Biscuit and I are doing the canal walk on Wednesday at seven. Fancy coming along? We'll go slowly.", minutesAgo: 40, voice: { seconds: 18 } },
+      { id: "dm-d1", from: "you", text: "Could we co-present the mood screening flow at the regional stroke forum?", minutesAgo: 180 },
+      { id: "dm-d2", from: "them", text: "Yes, gladly. I can cover the screening tools and the referral criteria if you take the clinic workflow.", minutesAgo: 40 },
     ],
-    reply: "Brilliant. Seven at the park gate, then. Biscuit will be thrilled.",
-    quickReplies: ["Count me in", "Maybe next time", "Thank you"],
-    about: "Walks with Biscuit, his dog, most mornings. Always glad of company at a slow pace.",
+    reply: "Sounds good. I'll draft the slides and share them with you by Friday.",
+    quickReplies: ["Agreed", "I'll draft the slides", "Thank you"],
+    about: "Clinical psychologist working with adjustment, low mood and fear of recurrence after stroke and cardiac events.",
     memberSince: "January 2026", friendsSince: "August 2026",
   },
   {
-    who: "anne", unread: 0,
+    who: "grace", unread: 0,
     lines: [
-      { id: "dm-a1", from: "you", text: "It was so good to talk on Thursday.", minutesAgo: 1500 },
-      { id: "dm-a2", from: "them", text: "Thank you for Thursday. It meant a lot to talk to someone who gets it.", minutesAgo: 1440 },
+      { id: "dm-a1", from: "you", text: "Thanks for the return-to-work template. We used it in clinic this week.", minutesAgo: 1500 },
+      { id: "dm-a2", from: "them", text: "Glad it helped. Let me know how patients find it and I'll update it.", minutesAgo: 1440 },
     ],
-    reply: "Same time next week? I'll bring the biscuits.",
-    quickReplies: ["Me too", "Same time next week?", "Thinking of you"],
-    about: "Retired teacher from Bath. Crosswords, tea and a bit of gardening.",
+    reply: "Will do. I'll send feedback after next week's clinic.",
+    quickReplies: ["Will do", "Thanks again", "Speak soon"],
+    about: "Occupational therapist in community neuro rehab: return to work, fatigue management and home adaptations.",
     memberSince: "February 2026", friendsSince: "September 2026",
   },
 ];
 export const CONVERSATION_IDS: PersonId[] = conversations.map(item => item.who);
-/** For a friend with no messages yet: how a new conversation starts. */
+/** For a connection with no messages yet: how a new conversation starts. */
 export const newConversation = {
-  reply: "Hello! Lovely to hear from you.",
-  quickReplies: ["Hello!", "How are you doing?", "Thinking of you"],
+  reply: "Hello, thanks for getting in touch. How can I help?",
+  quickReplies: ["Hello", "Thanks for connecting", "Could we arrange a call?"],
 };
 
 /* ------------------------------------------------------------------ safety */
 
 export type ReportReason = "money" | "health" | "unkind" | "fake" | "other";
 export const reportReasons: { id: ReportReason; label: string; tint: string; ink: string }[] = [
-  { id: "money", label: "Selling or asking for money", tint: "#FBEBC2", ink: "#6B5108" },
-  { id: "health", label: "Unsafe health advice", tint: "#FBE3DB", ink: "#8F3520" },
-  { id: "unkind", label: "Unkind or bullying", tint: "#E9E2F4", ink: "#45357A" },
-  { id: "fake", label: "Pretending to be someone", tint: "#DCECF4", ink: "#1F4E66" },
-  { id: "other", label: "Something else", tint: "#EBE7DE", ink: "#4F5A55" },
+  { id: "money", label: "Promotion, selling or a conflict of interest", tint: "#F3F4F6", ink: "#27323D" },
+  { id: "health", label: "Unsafe clinical advice", tint: "#F3F4F6", ink: "#27323D" },
+  { id: "unkind", label: "Unprofessional conduct", tint: "#F3F4F6", ink: "#27323D" },
+  { id: "fake", label: "Not a registered clinician", tint: "#F3F4F6", ink: "#27323D" },
+  { id: "other", label: "Something else", tint: "#F3F4F6", ink: "#27323D" },
 ];
 export const REPORT_REASONS: ReportReason[] = reportReasons.map(reason => reason.id);
 
 /* ------------------------------------------------------------------ alerts */
 
-export type AlertId = "a-circle" | "a-joan" | "a-garden" | "a-liwei";
+export type AlertId = "a-circle" | "a-ruth" | "a-garden" | "a-michael";
 /** Where an alert leads: the Friends drawer at a tab, one of the person's groups, or a space. */
 export type AlertTarget =
   | { kind: "friends"; tab: FriendsTab }
@@ -716,11 +709,12 @@ export type AlertTarget =
   | { kind: "space"; space: "feed" | "lounge" | "circle" | "groups" | "settings" | "safety" };
 export type CommunityAlert = { id: AlertId; who: PersonId | null; icon: "friend" | "group" | "circle"; title: string; detail: string; when: string; target: AlertTarget };
 /** What is new in My community, newest first. The toolbar shows "Alerts, 4 new" until they are seen. */
+// (Alerts have no place in clinician navigation, comment 6; the examples stay professional for the code that reads them.)
 export const communityAlerts: CommunityAlert[] = [
-  { id: "a-circle", who: null, icon: "circle", title: "Sunday circle is open", detail: "One seat is kept for you", when: "Now", target: { kind: "space", space: "circle" } },
-  { id: "a-joan", who: "joan", icon: "friend", title: "Joan wants to be friends", detail: "Saw you in Garden gang. Fancy being friends?", when: "10 minutes ago", target: { kind: "friends", tab: "requests" } },
-  { id: "a-garden", who: "margaret", icon: "group", title: "3 new messages in Garden gang", detail: "Margaret: First tomatoes!", when: "20 minutes ago", target: { kind: "group", group: "garden" } },
-  { id: "a-liwei", who: "liwei", icon: "friend", title: "Li Wei wants to be friends", detail: "Sits near you in Sunday circle", when: "1 hour ago", target: { kind: "friends", tab: "requests" } },
+  { id: "a-circle", who: null, icon: "circle", title: "Your group weekly session starts soon", detail: "Patients have sent questions in advance", when: "Now", target: { kind: "space", space: "circle" } },
+  { id: "a-ruth", who: "ruth", icon: "friend", title: "Ruth Calloway wants to connect", detail: "We both run joint cardiac and stroke rehab. Would be good to connect.", when: "10 minutes ago", target: { kind: "friends", tab: "requests" } },
+  { id: "a-garden", who: "hannah", icon: "group", title: "3 new messages in Stroke Rehabilitation Network", detail: "Hannah Brooks: Happy to share our rota", when: "20 minutes ago", target: { kind: "group", group: "garden" } },
+  { id: "a-michael", who: "michael", icon: "friend", title: "Michael Chau wants to connect", detail: "Also in Young Stroke Clinicians", when: "1 hour ago", target: { kind: "friends", tab: "requests" } },
 ];
 export const ALERT_IDS: AlertId[] = communityAlerts.map(alert => alert.id);
 
@@ -736,10 +730,10 @@ export type BreakChoice = "none" | "day" | "week";
 
 /** The choices on the Community settings page, in the order they are shown. */
 export const settingsChoices = {
-  requestsFrom: [{ id: "everyone", label: "Everyone" }, { id: "friendsOfFriends", label: "Friends of friends" }, { id: "noOne", label: "No one" }] as { id: RequestsFrom; label: string }[],
-  messagesFrom: [{ id: "friends", label: "Only friends" }, { id: "friendsAndGroups", label: "Friends and my groups" }, { id: "noOne", label: "No one" }] as { id: MessagesFrom; label: string }[],
+  requestsFrom: [{ id: "everyone", label: "Any verified clinician" }, { id: "friendsOfFriends", label: "Second-degree connections" }, { id: "noOne", label: "No one" }] as { id: RequestsFrom; label: string }[],
+  messagesFrom: [{ id: "friends", label: "Only connections" }, { id: "friendsAndGroups", label: "Connections and my groups" }, { id: "noOne", label: "No one" }] as { id: MessagesFrom; label: string }[],
   /** Who sees the person's own posts in the feed. */
-  postsSeenBy: [{ id: "everyone", label: "Everyone" }, { id: "friends", label: "Friends" }, { id: "onlyMe", label: "Only me" }] as { id: PostsSeenBy; label: string }[],
+  postsSeenBy: [{ id: "everyone", label: "All clinicians" }, { id: "friends", label: "Connections" }, { id: "onlyMe", label: "Only me" }] as { id: PostsSeenBy; label: string }[],
   /** The size of post text at each choice (normal is the size the feed was designed at). */
   textSize: [{ id: "smaller", label: "Smaller", px: 16 }, { id: "normal", label: "Normal", px: 19 }, { id: "bigger", label: "Bigger", px: 23 }] as { id: TextSize; label: string; px: number }[],
   /** When quiet time can start, as hours of the day (7 pm to 11 pm). It ends at 8 am. */
@@ -752,5 +746,5 @@ export const POSTS_SEEN_BY: PostsSeenBy[] = settingsChoices.postsSeenBy.map(choi
 export const TEXT_SIZES: TextSize[] = settingsChoices.textSize.map(choice => choice.id);
 export const BREAK_CHOICES: BreakChoice[] = settingsChoices.breakFor.map(choice => choice.id);
 /** Words hidden to begin with, and some that can be added with one tap. */
-export const startHiddenWords = ["hospital", "falls"];
-export const suggestedHiddenWords = ["money", "cure", "politics"];
+export const startHiddenWords: string[] = [];
+export const suggestedHiddenWords = ["sponsored", "supplement", "politics"];

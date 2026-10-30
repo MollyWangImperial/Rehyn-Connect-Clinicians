@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import "./clinician-edition.css";
 import { initializeReviewAccount } from "./lib/review-account";
 
 initializeReviewAccount(window.location.origin, () => ({ local: localStorage, session: sessionStorage }));

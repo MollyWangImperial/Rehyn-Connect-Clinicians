@@ -9,17 +9,31 @@ import { aboutFromTemplate } from "@/components/clinicians/portal/ProfileEditor"
 import { CLINICIANS, alertable, findClinician, freeTimes, sessionGroupIds, sessionPriceText, works } from "@/content/clinicians";
 import { combine, getOwnClinician, getRole, joinAsClinician, logOut, newOwnClinician, profileGaps, registerText } from "./clinician-portal";
 import { accept, busyTimes, expire, finish, hasExpired, pickSuggested, request, suggest } from "./consultations";
+import { DEMO_CLINICIAN_ID, meId } from "./me";
 
 // Monday 26 October 2026, 9am.
 const MONDAY = new Date(2026, 9, 26, 9);
 const HOUR = 3_600_000;
 
 describe("joining", () => {
-  it("first asks whether you're a patient (or carer) or a clinician", () => {
+  it("first offers joining with your own details or exploring as the demo clinician, never a patient or clinician choice", () => {
     const html = renderToStaticMarkup(createElement(SettingsContext.Provider, { value: () => {} },
       createElement(Router, { hook: () => ["/", () => {}] as [string, (to: string) => void], searchHook: () => "" }, createElement(Join))));
-    expect(html).toContain("I&#x27;m a clinician");
-    expect(html).toContain("I&#x27;m living with a condition, or caring for someone who is");
+    expect(html).toContain("Join with your own details");
+    expect(html).toContain(`Explore with the demo profile: ${findClinician(DEMO_CLINICIAN_ID)!.name}`);
+    expect(html).toContain("Explore with the demo profile: Dr Amara Osei");
+    // Everyone joining this edition is a clinician: the patient edition's role choice is gone.
+    expect(html).not.toContain("I&#x27;m a clinician");
+    expect(html).not.toContain("living with a condition");
+    expect(html).not.toMatch(/patient \(or carer\)/i);
+  });
+
+  it("signs in as the demo clinician until someone joins with their own details or picks another in the portal", () => {
+    expect(meId(null, null, CLINICIANS)).toBe(DEMO_CLINICIAN_ID);
+    expect(meId("ruth-calloway", null, CLINICIANS)).toBe("ruth-calloway");
+    expect(meId("nobody", null, CLINICIANS)).toBe(DEMO_CLINICIAN_ID);
+    const own = newOwnClinician({ name: "Dr Jo Baker", role: "Stroke physician", type: "doctor", registration: "1234567" });
+    expect(meId(null, own.id, [...CLINICIANS, own])).toBe(own.id);
   });
 });
 
@@ -47,7 +61,7 @@ describe("a clinician's own profile", () => {
 });
 
 describe("logging out", () => {
-  it("forgets the role and a clinician's own profile, so someone can join again as either", () => {
+  it("forgets the role and a clinician's own profile, so someone can join again", () => {
     const own = joinAsClinician({ name: "Sam Lee", role: "Physiotherapist", type: "physio", registration: "PH12345" });
     expect(getRole()).toBe("clinician");
     expect(findClinician(own.id)).toBeTruthy();

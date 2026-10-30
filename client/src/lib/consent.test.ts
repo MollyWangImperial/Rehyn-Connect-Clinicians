@@ -1,12 +1,22 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Router } from "wouter";
 import { SettingsContext } from "@/components/settings-context";
 import { LEGAL_VERSION } from "@/content/legal-content";
 import Join from "@/pages/Join";
 import { RegistrationGate } from "@/App";
-import { ageOn, agreedTo, canShare, CONSENT_KEY, createConsentStore, HEALTH_CONSENT_TEXT, HEALTH_CONSENT_VERSION, isRegistered, isUnder18, NO_CONSENTS, readConsents } from "./consent";
+import { ageOn, agreedTo, canShare, CONSENT_KEY, createConsentStore, HEALTH_CONSENT_TEXT, HEALTH_CONSENT_VERSION, isRegistered, isUnder18, NO_CONSENTS, readConsents, type Consents } from "./consent";
+
+// The Join page reads the consents through useConsents. On the server nothing has been agreed (a new joiner), and the
+// form behind the first step only opens after a tap, which a server render can't make. The one form a server render can
+// show is the one someone sees coming back after the Terms changed, so a test can stand in those consents here.
+const shownConsents = vi.hoisted(() => ({ value: null as unknown }));
+vi.mock("./consent", async importOriginal => {
+  const real = await importOriginal<typeof import("./consent")>();
+  return { ...real, useConsents: () => (shownConsents.value as Consents | null) ?? real.useConsents() };
+});
+afterEach(() => { shownConsents.value = null; });
 
 function storage(initial?: string) {
   const values = new Map<string, string>();
@@ -85,13 +95,28 @@ describe("joining needs all three agreements", () => {
 });
 
 describe("the Join page", () => {
-  // After the first step, where someone new chooses to join as a patient (or carer) or as a clinician.
-  const page = () => words(renderToStaticMarkup(createElement(SettingsContext.Provider, { value: () => {} }, createElement(Router, { ssrPath: "/community" }, createElement(Join, { startAs: "patient" })))));
+  const html = () => renderToStaticMarkup(createElement(SettingsContext.Provider, { value: () => {} }, createElement(Router, { ssrPath: "/community" }, createElement(Join, { startAs: "clinician" }))));
+  const page = () => words(html());
+  // Someone who agreed to an older version of the Terms, and nothing else yet: the agreements form opens straight away.
+  const comingBack = (): Consents => ({ ...NO_CONSENTS, terms: { version: "0.9", at: 5 } });
+
+  it("first offers joining with your own details or exploring with the demo profile, not a patient or clinician choice", () => {
+    const text = page();
+    expect(text).toContain("Join Rehyn: Connect for clinicians");
+    expect(text).toContain("Join with your own details");
+    expect(text).toContain("Your name, profession and registration number. Rehyn checks your registration.");
+    expect(text).toContain("Explore with the demo profile: Dr Amara Osei");
+    // The patient edition's role choice, and its "first name" form, aren't here.
+    expect(text).not.toMatch(/I'm a clinician|living with a condition|patient \(or carer\)/);
+    expect(text).not.toContain("Your first name");
+    expect(text).toContain("If you think someone is having a stroke, call 999");
+  });
 
   it("asks for a name, a date of birth and three separate agreements, the health information consent word for word", () => {
+    shownConsents.value = comingBack();
     const text = page();
-    expect(text).toContain("Join Rehyn: Connect");
-    expect(text).toContain("Your first name");
+    expect(text).toContain("Welcome back");
+    expect(text).toContain("Your name");
     expect(text).toContain("Your date of birth");
     expect(text).toContain("Rehyn Connect is for people aged 13 or over");
     for (const title of ["Terms of Use", "Privacy Notice", "Health information consent"]) expect(text).toContain(title);
@@ -99,21 +124,18 @@ describe("the Join page", () => {
     expect(text).toContain("I have read the Privacy Notice");
     expect(text).toContain(HEALTH_CONSENT_TEXT);
     for (const link of ["Read the Terms of Use", "Read the Privacy Notice", "How we use your information"]) expect(text).toContain(link);
+    // A clinician coming back isn't asked for their profession and registration again.
+    for (const field of ["Your profession", "Your role", "Your registration number"]) expect(text).not.toContain(field);
   });
 
-  it("starts with nothing ticked and the Join button waiting", () => {
-    const html = renderToStaticMarkup(createElement(SettingsContext.Provider, { value: () => {} }, createElement(Router, { ssrPath: "/community" }, createElement(Join, { startAs: "patient" }))));
-    expect((html.match(/type="checkbox"/g) ?? []).length).toBe(3);
-    expect(html).not.toMatch(/type="checkbox"[^>]*checked/);
-    expect(html).toMatch(/type="date"/);
-    expect(html).toMatch(/<button[^>]*type="submit"[^>]*aria-disabled="true"/);
-  });
-
-  it("asks a clinician for the same three agreements, and their profession, role and registration number", () => {
-    const text = words(renderToStaticMarkup(createElement(SettingsContext.Provider, { value: () => {} }, createElement(Router, { ssrPath: "/community" }, createElement(Join, { startAs: "clinician" })))));
-    expect(text).toContain("Join as a clinician");
-    for (const field of ["Your name", "Your profession", "Your role", "Your registration number"]) expect(text).toContain(field);
-    for (const title of ["Terms of Use", "Privacy Notice", "Health information consent"]) expect(text).toContain(title);
+  it("starts with nothing ticked and the button waiting", () => {
+    shownConsents.value = comingBack();
+    const markup = html();
+    expect((markup.match(/type="checkbox"/g) ?? []).length).toBe(3);
+    expect(markup).not.toMatch(/type="checkbox"[^>]*checked/);
+    expect(markup).toMatch(/type="date"/);
+    expect(markup).toMatch(/<button[^>]*type="submit"[^>]*aria-disabled="true"/);
+    expect(words(markup)).toContain("Continue");
   });
 
   it("stands in front of every page until the person has joined, but never in front of Warning signs", () => {

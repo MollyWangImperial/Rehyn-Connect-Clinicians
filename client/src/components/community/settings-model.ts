@@ -25,9 +25,9 @@ export function settingsTarget(section: SettingsSection | null | undefined): Set
 
 /** What each privacy choice means, said under it in Your privacy. */
 export const privacyMeaning = {
-  postsSeenBy: { friends: "Only your friends see what you share.", everyone: "Everyone in My community sees what you share.", onlyMe: "What you share stays with you." } as Record<PostsSeenBy, string>,
-  messagesFrom: { friends: "Only your friends can message you.", friendsAndGroups: "Friends, and people in your groups, can message you.", noOne: "No one can message you." } as Record<MessagesFrom, string>,
-  requestsFrom: { everyone: "Anyone can ask to be your friend.", friendsOfFriends: "Only friends of your friends can ask.", noOne: "No one can send you a friend request. Requests already waiting stay in Friends." } as Record<RequestsFrom, string>,
+  postsSeenBy: { friends: "Only your connections see what you share.", everyone: "Every verified clinician on Rehyn Connect sees what you share.", onlyMe: "What you share stays with you." } as Record<PostsSeenBy, string>,
+  messagesFrom: { friends: "Only your connections can message you.", friendsAndGroups: "Connections, and clinicians in your groups, can message you.", noOne: "No one can message you." } as Record<MessagesFrom, string>,
+  requestsFrom: { everyone: "Any verified clinician can ask to connect.", friendsOfFriends: "Only connections of your connections can ask.", noOne: "No one can send you a connection request. Requests already waiting stay in My Network." } as Record<RequestsFrom, string>,
 };
 
 const labelOf = <T extends string>(choices: { id: T; label: string }[], id: T): string => choices.find(choice => choice.id === id)?.label ?? "";
@@ -48,9 +48,9 @@ export function dayLabel(at: number, weekday = false): string {
  * composer, the part of the settings summary, and what is said once a post is made.
  */
 export function postsAudience(seenBy: PostsSeenBy): { label: string; summary: string; posted: string } {
-  if (seenBy === "everyone") return { label: "Everyone", summary: "posts for everyone", posted: "Posted for everyone in My community." };
+  if (seenBy === "everyone") return { label: "All clinicians", summary: "posts for all clinicians", posted: "Posted for every clinician on Rehyn Connect." };
   if (seenBy === "onlyMe") return { label: "Only me", summary: "posts just for you", posted: "Posted. Only you can see it." };
-  return { label: "Friends", summary: "posts for friends", posted: "Posted for your friends." };
+  return { label: "Connections", summary: "posts for connections", posted: "Posted for your connections." };
 }
 
 /** The break on now: "none" once a break has ended, whatever was chosen. */
@@ -110,12 +110,12 @@ export const townHint = (town: string): string => (town ? `Puts “${town}” un
 
 /** A line of post text for "Sample post at this size", from someone the person still sees. */
 const sampleLines: { who: PersonId; text: string }[] = [
-  { who: "margaret", text: "First tomatoes off the windowsill!" },
-  { who: "joan", text: "Buttoned my own cardigan this morning. All five buttons." },
-  { who: "david", text: "Biscuit and I made it to the corner shop and back." },
+  { who: "hannah", text: "Our seven-day ESD service has halved 30-day readmissions." },
+  { who: "ruth", text: "Joint cardiac and stroke rehab classes now run twice a week." },
+  { who: "kwame", text: "A one-page mood screening flow for stroke clinics, for feedback." },
 ];
 export function sampleLine(memory: CommunityMemory): { who: PersonId | null; text: string } {
-  return sampleLines.find(line => canSee(memory, line.who) && !hiddenWordIn(line.text, memory.settings.hiddenWords)) ?? { who: null, text: "This is the size posts are in My community." };
+  return sampleLines.find(line => canSee(memory, line.who) && !hiddenWordIn(line.text, memory.settings.hiddenWords)) ?? { who: null, text: "This is the size posts are in the feed." };
 }
 
 /* ----------------------------------------------------------- hidden words */

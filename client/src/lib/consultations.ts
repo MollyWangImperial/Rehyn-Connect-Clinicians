@@ -53,6 +53,8 @@ export type Consultation = {
   /** What the clinician sent the patient at the end, and whether they suggested a follow-up. */
   summary?: string;
   followUp?: boolean;
+  /** The name the patient shows the clinician. Requests made before it existed have none (shown by reference). */
+  patientName?: string;
 };
 
 /** The patient's questions, one per line. */

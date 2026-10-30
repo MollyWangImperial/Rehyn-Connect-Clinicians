@@ -97,6 +97,8 @@
 /* consultations and sessions */
 .pt-row { flex-direction: row; flex-wrap: wrap; align-items: center; }
 .pt-row-text { flex: 1 1 320px; display: flex; flex-direction: column; gap: 6px; }
+/* The patient's display name on a consultation (Rehyn Connect for clinicians). */
+.pt-patient { margin: 0; color: #1d2226; font-size: 16px; font-weight: 700; }
 .pt-summary { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; background: #e2ece4; color: #173d2f; font-size: 14px; line-height: 1.5; }
 .pt-summary.is-private { background: #fbf0dc; color: #6b4a12; }
 .pt-summary strong { font: 700 12px "Manrope", sans-serif; letter-spacing: .4px; text-transform: uppercase; }

@@ -1,8 +1,10 @@
 import { useId, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Check, HeartHandshake, Stethoscope } from "lucide-react";
-import { CLINICIAN_TYPES, REGISTER, type ClinicianType } from "@/content/clinicians";
+import { ArrowLeft, Check, Stethoscope, UserRound } from "lucide-react";
+import { CLINICIAN_TYPES, REGISTER, findClinician, professionalTitle, type ClinicianType } from "@/content/clinicians";
 import { joinAsClinician, setRole, useRole, type Role } from "@/lib/clinician-portal";
+import { setPortalClinician } from "@/lib/consultations";
+import { DEMO_CLINICIAN_ID } from "@/lib/me";
 import "@/components/join-role.css";
 import { useSettings, type SettingsView } from "@/components/AccountSettings";
 import HeartRateMark from "@/components/HeartRateMark";
@@ -32,23 +34,29 @@ function ConsentBox({ title, text, note, checked, onChange, read, problem }: {
   );
 }
 
-/** The first step for someone new: are they joining as a patient (or carer) or as a clinician? */
-function ChooseRole({ choose }: { choose: (role: Role) => void }) {
+/** How a clinician joins: with their own details, or by exploring the preview as the demo clinician. */
+type JoinWay = "own" | "demo";
+
+/** The first step in Rehyn Connect for clinicians (the patient edition asks patient or clinician here instead). */
+function ChooseWay({ choose }: { choose: (way: JoinWay) => void }) {
+  const demo = findClinician(DEMO_CLINICIAN_ID);
   return (
     <main className="join-page">
       <div className="join-card">
-        <p className="join-brand"><span className="join-brand-mark"><HeartRateMark size={22} /></span><span>Rehyn<em>: Connect</em></span></p>
-        <h1 className="join-title">Join Rehyn: <em className="join-connect">Connect</em></h1>
-        <p className="join-lede">First, how will you use Rehyn?</p>
-        <div className="join-roles" role="group" aria-label="I'm joining as">
-          <button type="button" className="join-role" onClick={() => choose("patient")}>
-            <span className="join-role-icon" aria-hidden="true"><HeartHandshake size={26} /></span>
-            <span className="join-role-text"><strong>I'm living with a condition, or caring for someone who is</strong>Join the community, read the Library and talk to clinicians.</span>
-          </button>
-          <button type="button" className="join-role is-clinician" onClick={() => choose("clinician")}>
+        <p className="join-brand"><span className="join-brand-mark"><HeartRateMark size={22} /></span><span>Rehyn<em>: Connect</em> <small className="join-edition">for clinicians</small></span></p>
+        <h1 className="join-title">Join Rehyn: <em className="join-connect">Connect</em> for clinicians</h1>
+        <p className="join-lede">A professional network for clinicians: connect with colleagues, join condition groups, share to the Library and run your consultations and group sessions with patients.</p>
+        <div className="join-roles" role="group" aria-label="How would you like to join?">
+          <button type="button" className="join-role is-clinician" onClick={() => choose("own")}>
             <span className="join-role-icon" aria-hidden="true"><Stethoscope size={26} /></span>
-            <span className="join-role-text"><strong>I'm a clinician</strong>Offer consultations by video, answer urgent requests and host group sessions.</span>
+            <span className="join-role-text"><strong>Join with your own details</strong>Your name, profession and registration number. Rehyn checks your registration.</span>
           </button>
+          {demo && (
+            <button type="button" className="join-role" onClick={() => choose("demo")}>
+              <span className="join-role-icon" aria-hidden="true"><UserRound size={26} /></span>
+              <span className="join-role-text"><strong>{`Explore with the demo profile: ${demo.name}`}</strong>{`${professionalTitle(demo)}. An example clinician with groups, patients and sessions, to see how everything works.`}</span>
+            </button>
+          )}
         </div>
         <p className="join-safety">Rehyn is not an emergency service. If you think someone is having a stroke, call 999. <Link href={fastCheckPath("/")}>See the warning signs</Link></p>
       </div>
@@ -72,8 +80,12 @@ export default function Join({ startAs }: { startAs?: Role } = {}) {
   const savedRole = useRole();
   // Back here only when a document has a new version (withdrawing the health consent keeps the account; it just stops sharing).
   const returning = consents.terms !== null;
-  const [as, setAs] = useState<Role | null>(returning ? savedRole ?? "patient" : startAs ?? null);
-  const clinician = as === "clinician";
+  // Everyone joining this edition is a clinician; the only choice is their own details or the demo profile.
+  const [way, setWay] = useState<JoinWay | null>(returning ? "own" : null);
+  const as: Role = startAs ?? savedRole ?? "clinician";
+  const demo = way === "demo";
+  const demoClinician = findClinician(DEMO_CLINICIAN_ID);
+  const clinician = as === "clinician" && !demo;
   const [profession, setProfession] = useState<ClinicianType | "">("");
   const [jobTitle, setJobTitle] = useState("");
   const [registration, setRegistration] = useState("");
@@ -81,6 +93,7 @@ export default function Join({ startAs }: { startAs?: Role } = {}) {
   const jobId = useId();
   const registrationId = useId();
   const [name, setName] = useState(() => (returning ? profileName(profile) : ""));
+  const typedName = demo ? demoClinician?.name ?? "" : name;
   const [born, setBorn] = useState(consents.dateOfBirth ?? "");
   const [ticked, setTicked] = useState<Record<Box, boolean>>({ terms: agreed.terms, privacy: agreed.privacy, health: agreed.health });
   const [tried, setTried] = useState(false);
@@ -91,7 +104,7 @@ export default function Join({ startAs }: { startAs?: Role } = {}) {
   const tooYoung = age !== null && age < MIN_AGE;
 
   const missing = [
-    !name.trim() && "your name",
+    !typedName.trim() && "your name",
     age === null && "your date of birth",
     clinician && !profession && "your profession",
     clinician && !registration.trim() && "your registration number",
@@ -111,39 +124,40 @@ export default function Join({ startAs }: { startAs?: Role } = {}) {
       return;
     }
     if (tooYoung) { setTried(true); requestAnimationFrame(() => problemBox.current?.focus()); return; }
-    const typed = name.trim();
+    const typed = typedName.trim();
     if (typed !== profileName(profile)) profileStore.save({ ...profile, name: typed, preferredName: "" });
     if (clinician && !returning && profession) joinAsClinician({ name: typed, role: jobTitle, type: profession, registration });
-    else if (!returning) setRole("patient");
+    else if (!returning) { setRole("clinician"); setPortalClinician(demo ? DEMO_CLINICIAN_ID : null); }
     consentStore.register(born, ticked.health);
-    // A new clinician starts in their portal, to finish their profile and set their hours.
+    // A new clinician starts in their portal, to finish their profile and set their hours; the demo profile starts in the feed.
     if (clinician && !returning) navigate("/clinicians/portal");
+    else if (demo) navigate("/community");
   };
 
-  if (!as) return <ChooseRole choose={setAs} />;
+  if (!way) return <ChooseWay choose={setWay} />;
 
   return (
     <main className="join-page">
       <div className="join-card">
         <p className="join-brand"><span className="join-brand-mark"><HeartRateMark size={22} /></span><span>Rehyn<em>: Connect</em></span></p>
-        {!returning && <button type="button" className="join-role-back" onClick={() => setAs(null)}><ArrowLeft size={16} aria-hidden="true" />{clinician ? "Joining as a clinician" : "Joining as a patient or carer"} · change</button>}
-        <h1 className="join-title">{returning ? "Welcome back" : clinician ? <>Join as a <em className="join-connect">clinician</em></> : <>Join Rehyn: <em className="join-connect">Connect</em></>}</h1>
+        {!returning && <button type="button" className="join-role-back" onClick={() => setWay(null)}><ArrowLeft size={16} aria-hidden="true" />{demo ? "Exploring with the demo profile" : "Joining with your own details"} · change</button>}
+        <h1 className="join-title">{returning ? "Welcome back" : demo ? <>Explore as <em className="join-connect">{demoClinician?.name}</em></> : <>Join as a <em className="join-connect">clinician</em></>}</h1>
         <p className="join-lede">{returning
           ? "The Terms of Use or the Privacy Notice have changed since you agreed to them. Please look at these again: all three are needed to use Rehyn: Connect."
-          : clinician
-            ? "Meet patients by video, answer urgent requests and host group sessions. We check your registration before patients can book you."
-            : "A warm, safe community for people living with stroke, Parkinson's, MS and other conditions, and the people who care for them."}</p>
+          : demo
+            ? "You'll see Rehyn Connect for clinicians as this example clinician: their network, groups, consultations and weekly sessions. Everything you do stays on this device."
+            : "Connect with colleagues, meet patients by video and host group sessions. We check your registration before patients can book you."}</p>
 
         {tried && (missing.length > 0 || tooYoung) && (
           <div ref={problemBox} className="join-problem" role="alert" tabIndex={-1}>{tooYoung ? `Rehyn Connect is for people aged ${MIN_AGE} or over, so we can't create an account for you.` : `To join, please add ${listed}.`}</div>
         )}
 
         <form className="join-form" onSubmit={join} noValidate>
-          <div className={`join-field ${tried && !name.trim() ? "is-missing" : ""}`}>
+          {!demo && <div className={`join-field ${tried && !name.trim() ? "is-missing" : ""}`}>
             <label htmlFor={nameId}>{clinician ? "Your name" : "Your first name"}</label>
-            <p className="join-hint" id={`${nameId}-hint`}>{clinician ? "As patients will see it, with Dr if you use it." : "This is the name other members will see."}</p>
+            <p className="join-hint" id={`${nameId}-hint`}>As colleagues and patients will see it, with Dr if you use it.</p>
             <input id={nameId} value={name} onChange={event => setName(event.target.value)} autoComplete={clinician ? "name" : "given-name"} maxLength={80} aria-describedby={`${nameId}-hint`} aria-invalid={(tried && !name.trim()) || undefined} />
-          </div>
+          </div>}
           {clinician && !returning && <>
             <div className={`join-field ${tried && !profession ? "is-missing" : ""}`}>
               <label htmlFor={professionId}>Your profession</label>
@@ -180,7 +194,7 @@ export default function Join({ startAs }: { startAs?: Role } = {}) {
           </fieldset>
 
           <button type="submit" className={`join-submit ${missing.length ? "is-waiting" : ""}`} aria-disabled={missing.length > 0}>
-            {!missing.length && <Check size={18} aria-hidden="true" />}{clinician && !returning ? "Join as a clinician" : "Join Rehyn: Connect"}
+            {!missing.length && <Check size={18} aria-hidden="true" />}{demo ? "Explore the demo" : clinician && !returning ? "Join as a clinician" : "Continue"}
           </button>
           <p className="join-safety">Rehyn is not an emergency service. If you think someone is having a stroke, call 999. <Link href={fastCheckPath("/")}>See the warning signs</Link></p>
         </form>

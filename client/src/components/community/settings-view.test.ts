@@ -75,7 +75,8 @@ describe("Community settings (F5)", () => {
     });
     expect(tagWith(html, "button", 'class="cm-set-toggle"', 'aria-expanded="true"')).toBe(true);
     // The dots are shown; a screen reader hears commas.
-    expect(text).toContain("Gentle mode on · , 2 hidden words");
+    // The clinician edition starts with no hidden words.
+    expect(text).toContain("Gentle mode on · , no hidden words");
     expect(text).toContain("Read aloud off · , normal text");
     expect(text).toContain("Quiet from 9 pm to 8 am");
     expect(tagWith(html, "p", 'class="cm-set-saved-slot"', 'role="status"')).toBe(true);
@@ -86,16 +87,23 @@ describe("Community settings (F5)", () => {
     const switches = tagsWith(html, "button", 'role="switch"');
     expect(switches).toHaveLength(6);
     expect(switches.filter(tag => tag.includes('aria-checked="true"'))).toHaveLength(5);
-    for (const label of ["Everyone", "Only friends", "Normal", "No break"]) expect(pressed(html, label)).toBe(true);
-    for (const label of ["No one", "Bigger", "1 week"]) expect(pressed(html, label)).toBe(false);
-    expect(tagWith(html, "button", 'aria-label="Stop hiding hospital"')).toBe(true);
-    expect(tagWith(html, "button", 'aria-label="Stop hiding falls"')).toBe(true);
-    expect(words(html)).toContain("Add “money”");
+    for (const label of ["Any verified clinician", "Only connections", "Connections", "Normal", "No break"]) expect(pressed(html, label)).toBe(true);
+    for (const label of ["All clinicians", "No one", "Bigger", "1 week"]) expect(pressed(html, label)).toBe(false);
+    // No hidden words to begin with: nothing to stop hiding, and the first suggestion to add.
+    expect(tagWith(html, "button", "aria-label=\"Stop hiding")).toBe(false);
+    expect(words(html)).toContain("Add “sponsored”");
     expect(tagWith(html, "button", 'class="cm-set-add"', 'aria-expanded="false"')).toBe(true);
     expect(tagWith(html, "button", 'aria-label="Earlier start"', 'aria-disabled="false"')).toBe(true);
     expect(tagWith(html, "button", 'aria-label="Later start"', 'aria-disabled="false"')).toBe(true);
     expect(html).toMatch(/<output[^>]*>9 pm<\/output>/);
     expect(words(html)).toContain("The Alerts badge stays quiet from 9 pm to 8 am");
+    // Words the person hides are listed, each with a way to stop hiding it.
+    state.memory = withSettings({ hiddenWords: ["supplement", "politics"] });
+    const hiding = view();
+    expect(tagWith(hiding, "button", 'aria-label="Stop hiding supplement"')).toBe(true);
+    expect(tagWith(hiding, "button", 'aria-label="Stop hiding politics"')).toBe(true);
+    expect(words(hiding)).toContain("Gentle mode on · , 2 hidden words");
+    expect(words(hiding)).toContain("Add “sponsored”");
   });
 
   it("links to the Friends drawer over this page, and to Safety", () => {
@@ -113,10 +121,10 @@ describe("Community settings (F5)", () => {
     expect(tagWith(html, "section", 'class="cm-card cm-set-privacy"')).toBe(true);
     for (const choice of ["Who sees my posts by default", "Who can message me", "Who can ask to be friends", "Show my town", "Show when I'm online"]) expect(text).toContain(choice);
     expect(pressed(html, "No one")).toBe(true);
-    expect(pressed(html, "Everyone")).toBe(true);
+    expect(pressed(html, "All clinicians")).toBe(true);
     expect(text).toContain("No one can message you.");
-    expect(text).toContain("Everyone in My community sees what you share.");
-    expect(text).toContain("Anyone can ask to be your friend.");
+    expect(text).toContain("Every verified clinician on Rehyn Connect sees what you share.");
+    expect(text).toContain("Any verified clinician can ask to connect.");
     expect(html).toMatch(/role="switch"[^>]*aria-checked="false"/);
     // Blocked: Gary, from the start, with Unblock (which asks once more before it happens).
     expect(tagWith(html, "section", 'class="cm-card cm-set-blocked"')).toBe(true);
@@ -171,6 +179,11 @@ describe("links that name a setting", () => {
 });
 
 describe("the live preview of the person's card", () => {
+  /** The card itself, without the rest of the page. */
+  const cardOf = (html: string) => html.slice(html.indexOf('class="cm-card cm-set-card"'), html.indexOf('class="cm-card cm-set-sample"'));
+  /** The demo clinician's portrait (Dr Amara Osei), the face the clinician shows everywhere. */
+  const OWN_PORTRAIT = "background-image:url(&quot;/photos/clinicians/amara-osei.jpg&quot;)";
+
   it("is tagged as the person's card, and what it offers are labels, not buttons", () => {
     const html = view();
     const card = html.slice(html.indexOf('class="cm-card cm-set-card"'), html.indexOf('class="cm-card cm-set-sample"'));
@@ -183,18 +196,18 @@ describe("the live preview of the person's card", () => {
     const html = view();
     const text = words(html);
     expect(text).toContain("Zak");
-    expect(text).toContain("In 4 groups · 3 friends");
-    expect(text).toContain("Add friend");
-    expect(text).toContain("Message (friends only)");
+    expect(text).toContain("In 4 groups · 4 friends");
+    expect(html).toContain('<span class="cm-set-pill cm-set-pill-add">Connect</span>');
+    expect(text).toContain("Message (connections only)");
     expect(tagWith(html, "span", "cm-set-online")).toBe(true);
     expect(text).toContain("Your drawn face, with a green dot for online.");
-    expect(text).toContain("Sample post at this size Margaret First tomatoes off the windowsill!");
+    expect(text).toContain("Sample post at this size Hannah Brooks");
   });
 
   it("shows the town from the profile, only while Show my town is on", () => {
     state.profile = { ...DEFAULT_PROFILE, city: "Leeds" };
     const shown = words(view());
-    expect(shown).toContain("Leeds · In 4 groups · 3 friends");
+    expect(shown).toContain("Leeds · In 4 groups · 4 friends");
     expect(shown).toContain("Puts “Leeds” under your name on your card");
     state.memory = withSettings({ showTown: false });
     const hidden = words(view());
@@ -207,29 +220,30 @@ describe("the live preview of the person's card", () => {
     const html = view();
     const text = words(html);
     expect(text).toContain("Not taking requests");
-    expect(text).toContain("No one can send you a friend request. Requests already waiting stay in Friends.");
-    expect(text).not.toContain("(friends only)");
+    expect(text).toContain("No one can send you a connection request. Requests already waiting stay in My Network.");
+    expect(text).not.toContain("(connections only)");
     expect(text).not.toContain("Only friends could message you");
     expect(tagWith(html, "span", "cm-set-online")).toBe(false);
-    // The monogram: the initial in the serif, on the colour chosen (peach to begin with).
-    expect(html).toMatch(/<span class="cm-face cm-face-initial cm-face-monogram cm-pop"[^>]*background-color:#F2D3C7;color:#6E3524[^>]*>Z<\/span>/);
     expect(text).toContain("Your initial, Z, on peach.");
+    // The card's face is the signed-in clinician's own portrait, whatever picture is chosen (comment 21).
+    expect(cardOf(html)).toContain(OWN_PORTRAIT);
+    expect(cardOf(html)).not.toContain("cm-face-monogram");
   });
 
-  it("shows the profile photo once there is one, and the initial until then", () => {
+  it("describes the profile photo once there is one, and the initial until then", () => {
     state.memory = withSettings({ picture: "photo" });
     expect(words(view())).toContain("Your initial, Z, with a green dot for online.");
     state.profile = { ...DEFAULT_PROFILE, photo: "data:image/png;base64,iVBORw0KGgo=" };
     const html = view();
     expect(words(html)).toContain("Your photo, with a green dot for online.");
-    expect(html).toContain('background-image:url(&quot;data:image/png;base64,iVBORw0KGgo=&quot;)');
+    expect(cardOf(html)).toContain(OWN_PORTRAIT);
   });
 
-  it("draws a portrait, an emblem or an illustrated face the person chose", () => {
+  it("describes a portrait, an emblem or an illustrated face the person chose", () => {
     state.memory = withSettings({ picture: "portrait" });
     const portrait = view();
     expect(words(portrait)).toContain("Your portrait, with a green dot for online.");
-    expect(portrait).toContain("background-image:url(&quot;data:image/svg+xml,");
+    expect(cardOf(portrait)).toContain(OWN_PORTRAIT);
     state.memory = withSettings({ picture: "emblem", look: { ...blankCommunityMemory().settings.look, emblem: "tea" } });
     expect(words(view())).toContain("Your emblem: a cup of tea, with a green dot for online.");
     state.memory = withSettings({ picture: "illustrated" });
@@ -251,17 +265,19 @@ describe("the live preview of the person's card", () => {
     expect(text).toContain("The name you go by. Alira uses it too.");
     expect(text).toContain("Cancel Save changes");
     // The card shows the words, as others would see them.
-    expect(text).toContain("Leeds · In 4 groups · 3 friends “Gardener and proud grandad.”");
+    expect(text).toContain("Leeds · In 4 groups · 4 friends “Gardener and proud grandad.”");
   });
 
   it("counts friends and groups as they change", () => {
-    state.memory = withSettings({}, memory => { memory.answers = { joan: "accepted" }; memory.joined = ["knit"]; });
-    expect(words(view())).toContain("In 5 groups · 4 friends");
+    state.memory = withSettings({}, memory => { memory.answers = { ruth: "accepted" }; memory.joined = ["knit"]; });
+    expect(words(view())).toContain("In 5 groups · 5 friends");
   });
 
   it("takes the sample post from someone the person still sees", () => {
-    state.memory = withSettings({}, memory => { memory.blocks = { margaret: NOW }; });
-    expect(words(view())).toContain("Sample post at this size Joan Buttoned my own cardigan");
+    state.memory = withSettings({}, memory => { memory.blocks = { hannah: NOW }; });
+    const text = words(view());
+    expect(text).toContain("Sample post at this size Ruth Calloway");
+    expect(text).not.toContain("Sample post at this size Hannah Brooks");
   });
 });
 
@@ -294,9 +310,9 @@ describe("the other settings as they are stored", () => {
     expect(pressed(view(), "No break")).toBe(true);
   });
 
-  it("offers a starting word back once it is taken off, and stops adding at 20 words", () => {
-    state.memory = withSettings({ hiddenWords: ["money", "cure", "politics", "hospital"] });
-    expect(words(view())).toContain("Add “falls”");
+  it("offers the next suggested word once one is hidden, and stops adding at 20 words", () => {
+    state.memory = withSettings({ hiddenWords: ["sponsored"] });
+    expect(words(view())).toContain("Add “supplement”");
     state.memory = withSettings({ hiddenWords: Array.from({ length: 20 }, (_, index) => `word${index}`) });
     const full = view();
     expect(tagWith(full, "button", 'class="cm-set-add"')).toBe(false);
@@ -304,6 +320,6 @@ describe("the other settings as they are stored", () => {
     state.memory = withSettings({ hiddenWords: [] });
     const none = words(view());
     expect(none).toContain("no hidden words");
-    expect(none).toContain("Add “money”");
+    expect(none).toContain("Add “sponsored”");
   });
 });

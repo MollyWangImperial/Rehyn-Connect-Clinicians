@@ -51,6 +51,11 @@ export type Clinician = {
   own?: boolean;
   registration?: string;
   verified?: boolean;
+  /** Rehyn Connect for clinicians: their portrait, where they work and a short professional summary for colleagues. */
+  photo?: string;
+  org?: string;
+  place?: string;
+  summary?: string;
 };
 
 export const CLINICIAN_TYPES: { id: ClinicianType; label: string }[] = [
@@ -70,7 +75,7 @@ export const REGISTER: Record<ClinicianType, string> = {
 
 const WEEKDAYS = [1, 2, 3, 4, 5];
 
-export const CLINICIANS: Clinician[] = [
+const BASE: Clinician[] = [
   {
     id: "amara-osei", name: "Dr Amara Osei", first: "Amara", initials: "AO", role: "Consultant stroke physician", type: "doctor",
     level: "Consultant", years: 14, hours: 1320, price: 85,
@@ -128,12 +133,12 @@ export const CLINICIANS: Clinician[] = [
     about: "Ruth supports people through the weeks and months after a heart attack or a diagnosis of angina. Partners are welcome to join the call too.",
   },
   {
-    id: "meilin-chau", name: "Dr Mei Lin Chau", first: "Mei Lin", initials: "MC", role: "Consultant diabetologist", type: "doctor",
+    id: "michael-chau", name: "Dr Michael Chau", first: "Michael", initials: "MC", role: "Consultant diabetologist", type: "doctor",
     level: "Consultant", years: 13, hours: 1260, price: 85,
     conditions: [["diabetes", "type-2"], ["diabetes", "type-1"], ["diabetes", "prediabetes"], ["thyroid", "underactive"], ["thyroid", "overactive"]],
     languages: ["English", "Cantonese"], schedule: [{ days: [3, 5], from: 9, to: 15 }],
     help: ["Making sense of blood sugar results", "Medicines and insulin, step by step", "Thyroid tests and treatment", "Looking after your eyes, feet and kidneys"],
-    about: "Mei Lin looks after people with diabetes and thyroid conditions. A first consultation reviews your results and how things are day to day, and agrees what to focus on first.",
+    about: "Michael looks after people with diabetes and thyroid conditions. A first consultation reviews your results and how things are day to day, and agrees what to focus on first.",
   },
   {
     id: "sophie-adair", name: "Sophie Adair", first: "Sophie", initials: "SA", role: "Specialist dietitian", type: "diet",
@@ -144,10 +149,10 @@ export const CLINICIANS: Clinician[] = [
     about: "Sophie helps people find a way of eating that fits their condition and their life. Bring a rough idea of what you usually eat in a day.",
   },
   {
-    id: "joseph-adeyemi", name: "Joseph Adeyemi", first: "Joseph", initials: "JA", role: "Musculoskeletal physiotherapist", type: "physio",
+    id: "joseph-hartley", name: "Joseph Hartley", first: "Joseph", initials: "JH", role: "Musculoskeletal physiotherapist", type: "physio",
     level: "Senior", years: 9, hours: 1980, price: 55,
     conditions: [["back-neck", "back-pain"], ["back-neck", "neck-pain"], ["joint-replacement", "hip-replacement"], ["joint-replacement", "knee-replacement"]],
-    languages: ["English", "Yoruba"], schedule: [{ days: WEEKDAYS, from: 16, to: 20 }],
+    languages: ["English"], schedule: [{ days: WEEKDAYS, from: 16, to: 20 }],
     help: ["Back and neck pain that keeps coming back", "Getting moving after a hip or knee replacement", "Exercises you can do at home", "Getting back to work and hobbies"],
     about: "Joseph works with people with back and neck pain and after joint replacements. The first consultation includes a look at how you move on camera and a few exercises to start with.",
   },
@@ -167,7 +172,53 @@ export const CLINICIANS: Clinician[] = [
     help: ["Understanding your kidney results", "Slowing kidney disease down", "Choices about dialysis and transplant", "Medicines that are kind to the kidneys"],
     about: "Elena looks after people with kidney disease at every stage. A first consultation goes through your results and what they mean, and what can help protect your kidneys.",
   },
+  {
+    id: "arjun-mehta", name: "Dr Arjun Mehta", first: "Arjun", initials: "AM", role: "Consultant neurologist", type: "doctor",
+    level: "Consultant", years: 13, hours: 980, price: 90,
+    conditions: [["parkinsons", "parkinsons-disease"], ["multiple-sclerosis", "relapsing-remitting"], ["multiple-sclerosis", "progressive"], ["stroke", "ischaemic"]],
+    languages: ["English", "Hindi", "Gujarati"], schedule: [{ days: [1, 3], from: 9, to: 15 }],
+    help: ["Making sense of a new Parkinson's diagnosis", "Medicines and how to time them", "Changes in movement, sleep or mood", "What to ask at your next review"],
+    about: "Arjun looks after people with Parkinson's and other movement disorders. A first consultation goes through how things are day to day and what would make the biggest difference.",
+  },
+  {
+    id: "imani-clarke", name: "Imani Clarke", first: "Imani", initials: "IC", role: "Stroke nurse specialist", type: "nurse",
+    level: "Senior", years: 8, hours: 1610, price: 50,
+    conditions: [["stroke", "ischaemic"], ["stroke", "haemorrhagic"], ["stroke", "tia"], ["blood-pressure", "high-blood-pressure"]],
+    languages: ["English"], schedule: [{ days: [1, 2, 3, 4, 5], from: 8, to: 16 }],
+    help: ["The first weeks home after a stroke", "Medicines and blood pressure checks", "Knowing which symptoms to act on", "Support for family and carers"],
+    about: "Imani supports people and their families in the weeks after a stroke. A first consultation is a chance to go through medicines, warning signs and what comes next.",
+  },
 ];
+
+// The portraits are real photographs from Unsplash (free to use under the Unsplash License), kept in
+// public/photos/clinicians and cropped to the face. Each clinician is an example profile: the photo is a model, not the
+// clinician named. Photographers and photo pages (unsplash.com/photos/<id>): Amara, Christina @ wocintechchat.com
+// (_5_CBVCLBsY); Priya, Ocho Artex Media (rm7rZYdl3rY); Hannah, Christina @ wocintechchat.com (SJvDxw0azqw); Kwame,
+// Bruno Rodrigues (279xIHymPYY); Grace, Beatriz Mendez (_4xStiTXY1o); Tomás, Roy K (PukoW35U8JA); Ruth, Jonathan Borba
+// (4mUk_DFImbI); Michael, Dalton Ngangi (ZCztndOWdjs); Sophie, Md Ishak Rahman (niyAwrzx8jc); Joseph, Abu Saied
+// (-dntKy_x8qo); Sarah, Eros Reyes Cabrera (RtakOBTTdvY); Elena, Humberto Chávez (FVh_yqLR9eA); Arjun, Usman Yousaf
+// (SakqLf78KVo); Imani, Joecalih (1l6UeCc9P9o).
+const photo = (id: string) => `/photos/clinicians/${id}.jpg`;
+
+/** What colleagues see in the clinician network: where they work and a short professional summary. */
+const NETWORK: Record<string, Pick<Clinician, "org" | "place" | "summary">> = {
+  "amara-osei": { org: "Royal Lambeth Hospital", place: "London", summary: "Stroke physician leading the hyperacute stroke unit's early supported discharge pathway. Interested in secondary prevention and stroke in younger adults." },
+  "priya-raman": { org: "Northfield Neuro Rehab Centre", place: "Leeds", summary: "Neuro physio working across stroke, Parkinson's and MS. Runs the centre's balance and falls clinic and teaches on the MSc neuro rehab module." },
+  "hannah-brooks": { org: "Bath Community Therapy Service", place: "Bath", summary: "Speech and language therapist specialising in aphasia and dysphagia after stroke, and communication support in dementia." },
+  "kwame-mensah": { org: "Southbank Clinical Psychology", place: "London", summary: "Clinical psychologist working with adjustment, low mood and fear of recurrence after stroke and cardiac events. CBT and ACT." },
+  "grace-whitlow": { org: "Riverside Community Neuro Team", place: "Bristol", summary: "Occupational therapist in community neuro rehab: return to work, fatigue management and home adaptations after stroke and brain injury." },
+  "tomas-leal": { org: "St Bartholomew Heart Centre", place: "London", summary: "Cardiologist with an interest in atrial fibrillation and stroke prevention, and in joint cardiology and stroke clinics." },
+  "ruth-calloway": { org: "Whitby Cardiac Rehabilitation", place: "Whitby", summary: "Cardiac rehab nurse leading the community programme after heart attack and angina, including blood pressure self-monitoring." },
+  "michael-chau": { org: "Manchester Diabetes Centre", place: "Manchester", summary: "Diabetologist running the joint diabetes and vascular clinic, with an interest in cardiovascular risk after stroke." },
+  "sophie-adair": { org: "Leicester Nutrition and Dietetics", place: "Leicester", summary: "Specialist dietitian in diabetes, weight and kidney health; group education programmes and dysphagia diets with SLT colleagues." },
+  "joseph-hartley": { org: "Cardiff MSK Physiotherapy", place: "Cardiff", summary: "MSK physiotherapist: persistent back and neck pain, and rehab after hip and knee replacement." },
+  "sarah-whitfield": { org: "Northern Cancer Centre", place: "Newcastle", summary: "Clinical oncologist in breast and colorectal cancer with an interest in late effects and survivorship care." },
+  "elena-rossi": { org: "Birmingham Renal Unit", place: "Birmingham", summary: "Nephrologist across chronic kidney disease, dialysis and transplant, with a research interest in kidney health after stroke." },
+  "arjun-mehta": { org: "Midlands Movement Disorders Service", place: "Nottingham", summary: "Neurologist leading the movement disorders clinic: Parkinson's, atypical parkinsonism and device-aided therapies." },
+  "imani-clarke": { org: "Royal Lambeth Hospital", place: "London", summary: "Stroke specialist nurse on the early supported discharge team: secondary prevention, medicines and family support." },
+};
+
+export const CLINICIANS: Clinician[] = BASE.map(clinician => ({ ...clinician, photo: photo(clinician.id), ...NETWORK[clinician.id] }));
 
 /** "Often seen by", on each Library section's card on the by-condition page (artboard 2), keyed by section id. */
 export const SEEN_BY: Record<string, string> = {
@@ -342,12 +393,14 @@ export const whenText = (date: Date, now = new Date()) => `${dayText(date, now)}
 
 /** A free weekly group session a clinician hosts to answer questions. The title is the question people actually ask,
  *  so it is clear at a glance who it is for; `about` says what you come away with. */
-export type WeeklySession = { id: string; clinicianId: string; title: string; about: string; day: number; hour: number; minute: number; minutes: number; spaces: number };
+export type WeeklySession = { id: string; clinicianId: string; title: string; about: string; day: number; hour: number; minute: number; minutes: number; spaces: number; groupIds?: string[] };
 
 export const WEEKLY_SESSIONS: WeeklySession[] = [
+  { id: "stroke-prevention-qa", clinicianId: "amara-osei", title: "How do I lower my risk of another stroke?", about: "A stroke physician answers patients' questions on blood pressure, cholesterol, AF and the medicines that cut the risk of a second stroke.", day: 4, hour: 18, minute: 0, minutes: 45, spaces: 20, groupIds: ["stroke", "blood-pressure"] },
+  { id: "young-stroke-qa", clinicianId: "amara-osei", title: "Stroke under 50: returning to work and family life", about: "Open Q&A for younger stroke survivors and their families: causes, driving, work and what recovery can look like.", day: 1, hour: 19, minute: 0, minutes: 60, spaces: 25, groupIds: ["stroke"] },
   { id: "moving-after-stroke", clinicianId: "priya-raman", title: "How do I walk further without falling?", about: "A neuro physio shows balance exercises you can do at home after a stroke, then takes your questions on walking, stairs and falls.", day: 1, hour: 17, minute: 0, minutes: 45, spaces: 12 },
   { id: "low-mood-after-illness", clinicianId: "kwame-mensah", title: "Why do I feel low now the worst is over?", about: "Many people feel flat or anxious weeks after an illness or treatment ends. A psychologist explains why, and the small steps that help.", day: 2, hour: 18, minute: 30, minutes: 60, spaces: 15 },
-  { id: "diabetes-questions", clinicianId: "meilin-chau", title: "What is my HbA1c really telling me?", about: "Bring your latest results. A diabetologist explains HbA1c, highs and lows, and what to ask at your next diabetes review.", day: 3, hour: 19, minute: 0, minutes: 45, spaces: 20 },
+  { id: "diabetes-questions", clinicianId: "michael-chau", title: "What is my HbA1c really telling me?", about: "Bring your latest results. A diabetologist explains HbA1c, highs and lows, and what to ask at your next diabetes review.", day: 3, hour: 19, minute: 0, minutes: 45, spaces: 20 },
   { id: "heart-recovery", clinicianId: "ruth-calloway", title: "How active can I be after a heart attack?", about: "A cardiac rehab nurse on building up activity step by step, which chest symptoms to act on, and getting back to everyday life.", day: 4, hour: 12, minute: 30, minutes: 45, spaces: 15 },
   { id: "words-and-swallowing", clinicianId: "hannah-brooks", title: "When the words won't come: help with aphasia", about: "A speech and language therapist shares ways to make talking and swallowing easier after a stroke, for you and the family who help.", day: 6, hour: 11, minute: 0, minutes: 45, spaces: 10 },
 ];
@@ -373,7 +426,7 @@ export function nextWeeklySessions(now = new Date()): GroupSession[] {
     start.setDate(start.getDate() + ((series.day - start.getDay() + 7) % 7));
     if (start.getTime() + series.minutes * 60_000 <= now.getTime()) start.setDate(start.getDate() + 7);
     const stamp = `${start.getFullYear()}${String(start.getMonth() + 1).padStart(2, "0")}${String(start.getDate()).padStart(2, "0")}`;
-    return { id: `${series.id}-${stamp}`, clinicianId: series.clinicianId, title: series.title, about: series.about, start: start.getTime(), minutes: series.minutes, spaces: series.spaces, weekly: true };
+    return { id: `${series.id}-${stamp}`, clinicianId: series.clinicianId, title: series.title, about: series.about, start: start.getTime(), minutes: series.minutes, spaces: series.spaces, weekly: true, ...(series.groupIds ? { groupIds: series.groupIds } : {}) };
   });
 }
 

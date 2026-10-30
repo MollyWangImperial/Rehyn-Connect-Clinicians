@@ -42,77 +42,86 @@ const flat = (html: string) => words(html.replace(/<[^>]+>/g, ""));
 const tagWith = (html: string, name: string, ...attributes: string[]) =>
   (html.match(new RegExp(`<${name}\\b[^>]*>`, "g")) ?? []).some(tag => attributes.every(attribute => tag.includes(attribute)));
 
-describe("For you, after answering", () => {
-  it("shows the friends-now card with Wave hello, the not-now line with Undo, and All caught up", () => {
-    store.acceptRequest("joan");
-    store.declineRequest("liwei");
-    visit = { ...visit, answered: ["joan", "liwei"] };
+describe("Invitations, after answering", () => {
+  it("shows the now-connected card with Say hello, the not-now line with Undo, and All caught up", () => {
+    store.acceptRequest("ruth");
+    store.declineRequest("michael");
+    visit = { ...visit, answered: ["ruth", "michael"] };
     let html = render("requests");
     let text = words(html);
-    expect(text).toContain("4 friends · no requests waiting");
-    expect(text).toContain("You and Joan are friends now");
-    expect(text).toContain("Say hello to start things off.");
-    expect(text).toContain("Wave hello to Joan");
-    expect(text).toContain("Undo accepting Joan's request");
-    expect(text).toContain("You chose not now for Li Wei. They won't be told.");
-    expect(flat(html)).toContain("Undo, and show Li Wei's request again");
-    expect(text).toContain("All caught up. No requests waiting.");
-    // The confetti only plays on the card just accepted while the tab was showing.
+    expect(text).toContain("5 connections · no invitations waiting");
+    expect(text).toContain("You and Ruth Calloway are now connected");
+    expect(text).toContain("Say hello to start the conversation.");
+    expect(text).toContain("Say hello to Ruth Calloway");
+    expect(text).toContain("Undo accepting Ruth Calloway's request");
+    expect(text).toContain("You chose not now for Dr Michael Chau. He won't be told.");
+    expect(flat(html)).toContain("Undo, and show Dr Michael Chau's request again");
+    expect(text).toContain("All caught up. No invitations waiting.");
+    // The clinician edition has no confetti on an accepted request.
     expect(html).not.toContain("cm-fr-confetti");
+    expect(text).not.toMatch(/friends now|Wave hello/);
 
-    store.wave("joan");
+    store.wave("ruth");
     html = render("requests");
     text = words(html);
-    expect(text).toContain("You waved hello.");
-    expect(text).toContain("Waved to Joan");
+    expect(text).toContain("You said hello.");
+    expect(text).toContain("Hello sent to Ruth Calloway");
     expect(tagWith(html, "button", 'class="cm-fr-wave is-on"', 'aria-disabled="true"')).toBe(true);
     expect(text).not.toMatch(/on its way/);
   });
 
-  it("lets earlier answers go: Joan is a friend, in the Friends tab", () => {
-    store.acceptRequest("joan");
+  it("lets earlier answers go: Ruth is a connection, in the Connections tab", () => {
+    store.acceptRequest("ruth");
     const html = render("requests");
-    expect(words(html)).not.toContain("Joan wants to be friends");
-    expect(words(html)).toContain("Li Wei wants to be friends");
-    expect(words(render("friends"))).toContain("Joan New friend");
+    expect(words(html)).not.toContain("Ruth Calloway wants to connect");
+    expect(words(html)).toContain("Dr Michael Chau wants to connect");
+    expect(words(render("friends"))).toContain("Ruth Calloway Specialist cardiac rehabilitation nurse");
+  });
+
+  // Messages shows a just-accepted connection as "New connection" (messages-model statusWords); My Network should agree.
+  it("marks a just-accepted connection as a New connection in the Connections tab", () => {
+    store.acceptRequest("ruth");
+    const text = words(render("friends"));
+    expect(text).toContain("Ruth Calloway Specialist cardiac rehabilitation nurse New connection");
+    expect(text).not.toContain("New friend");
   });
 
   it("says when new requests are off, and shows the choice at the foot", () => {
     store.updateSettings({ requestsFrom: "noOne" });
     const text = words(render("requests"));
-    expect(text).toContain("New friend requests are off. You chose “No one” in Community settings.");
+    expect(text).toContain("New connection requests are off. You chose “No one” in Settings.");
     expect(text).toContain("Who can send you requests: No one Change");
   });
 
-  it("names only the friends in common that are still friends", () => {
-    store.block("margaret");
+  it("names only the connections in common that are still connections", () => {
+    store.block("hannah");
     const text = words(render("requests"));
-    expect(text).toContain("Anne is a friend of yours");
-    expect(text).not.toContain("Margaret and Anne are friends of yours");
+    expect(text).toContain("Grace Whitlow is a connection of yours");
+    expect(text).not.toContain("Hannah Brooks and Grace Whitlow are connections of yours");
   });
 });
 
-describe("Sent, Friends and Blocked, after a change", () => {
+describe("Sent, Connections and Blocked, after a change", () => {
   it("keeps a cancelled request as Request cancelled, with Undo", () => {
-    store.cancelRequest("tomasz");
-    visit = { ...visit, cancelled: [{ who: "tomasz", at: Date.now() - 2 * DAY }] };
+    store.cancelRequest("tomas");
+    visit = { ...visit, cancelled: [{ who: "tomas", at: Date.now() - 2 * DAY }] };
     const html = render("sent");
     const text = words(html);
     expect(tagWith(html, "li", 'class="cm-fr-card cm-fr-sent is-cancelled"')).toBe(true);
     expect(text).toContain("Request cancelled");
-    expect(flat(html)).toContain("Undo: keep your request to Tomasz");
+    expect(flat(html)).toContain("Undo: keep your request to Dr Tomás Leal");
     expect(text).toContain("Sent 0 , 0");
   });
 
-  it("keeps a friend blocked in this visit in their place, with Undo and the ··· button", () => {
-    store.block("margaret", communityStore.visitStart + 1);
-    store.mute("anne");
+  it("keeps a connection blocked in this visit in their place, with Undo and the ··· button", () => {
+    store.block("hannah", communityStore.visitStart + 1);
+    store.mute("grace");
     const html = render("friends");
     const text = words(html);
-    expect(text).toContain("Friends 2 , 2");
-    expect(flat(html)).toContain("Undo, and unblock Margaret");
-    expect(tagWith(html, "button", 'aria-label="More options for Margaret"')).toBe(true);
-    expect(text).not.toContain("Wave to Margaret");
+    expect(text).toContain("Connections 3 , 3");
+    expect(flat(html)).toContain("Undo, and unblock Hannah Brooks");
+    expect(tagWith(html, "button", 'aria-label="More options for Hannah Brooks"')).toBe(true);
+    expect(text).not.toContain("Say hello to Hannah Brooks");
     expect(text).toContain("Active yesterday · posts hidden");
   });
 
@@ -128,8 +137,8 @@ describe("Sent, Friends and Blocked, after a change", () => {
 
   it("says so when nobody is blocked or waiting", () => {
     store.unblock("gary");
-    store.cancelRequest("tomasz");
+    store.cancelRequest("tomas");
     expect(words(render("blocked"))).toContain("You haven't blocked anyone.");
-    expect(words(render("sent"))).toContain("No requests waiting for a yes.");
+    expect(words(render("sent"))).toContain("No connection requests waiting for an answer.");
   });
 });

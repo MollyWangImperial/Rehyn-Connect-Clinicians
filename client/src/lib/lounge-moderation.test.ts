@@ -104,7 +104,7 @@ describe("the moderation store", () => {
   it("starts with the sample queue and keeps changes", () => {
     const storage = memoryStorage();
     const store = createModerationStore(() => storage);
-    expect(needsPerson(store.load()).map(item => (item.kind === "held" ? item.post.author : "appeal"))).toEqual(["liwei", "david", "priya", "you"]);
+    expect(needsPerson(store.load()).map(item => (item.kind === "held" ? item.post.author : "appeal"))).toEqual(["michael", "kwame", "priya", "you"]);
     store.approve("seed-priya", NOW);
     store.remove("seed-zak", "you", "", NOW);
     const again = createModerationStore(() => storage).load();

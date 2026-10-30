@@ -450,10 +450,10 @@ function CardPreview({ name, settings, town, groups, friends, photo, initial }: 
           {settings.about && <p className="cm-set-card-about">{`“${settings.about}”`}</p>}
         </div>
         <p className="cm-set-card-buttons">
-          <span className={`cm-set-pill ${taking ? "cm-set-pill-add" : "cm-set-pill-off"}`}>{taking ? "Add friend" : "Not taking requests"}</span>
+          <span className={`cm-set-pill ${taking ? "cm-set-pill-add" : "cm-set-pill-off"}`}>{taking ? "Connect" : "Not taking requests"}</span>
           {noMessages ? <span className="cm-set-pill cm-set-pill-off">Not taking messages</span> : (
             <span className={`cm-set-pill cm-set-pill-message${friendsOnly ? " is-limited" : ""}`}>
-              {friendsOnly && <LockIcon size={15} />}Message{friendsOnly && <span className="cm-sr"> (friends only)</span>}
+              {friendsOnly && <LockIcon size={15} />}Message{friendsOnly && <span className="cm-sr"> (connections only)</span>}
             </span>
           )}
         </p>

@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { Link, Route, Switch, useLocation } from "wouter";
 import RecoveryShell from "@/components/RecoveryShell";
+import AddToLibraryBar from "@/components/library/AddToLibrary";
 import ConditionPage from "@/components/library/ConditionPage";
 import ItemPage from "@/components/library/ItemPage";
 import LibraryFront from "@/components/library/LibraryFront";
@@ -48,6 +49,8 @@ const or = (found: unknown, page: ReactNode) => (found ? page : <Missing />);
 export default function Library() {
   useScrollOnArrival();
   return <RecoveryShell active="Library" dateLabel={todayLabel()} className="library-shell" panel={false}>
+    {/* For clinicians only: add content to a condition's page (browser comment 15). */}
+    <AddToLibraryBar />
     <Switch>
       <Route path="/"><LibraryFront /></Route>
       <Route path="/stories"><StoriesPage /></Route>

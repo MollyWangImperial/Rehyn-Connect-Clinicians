@@ -15,9 +15,11 @@ import { librarySections } from "./library";
 function draw(address: string) {
   const [path, search = ""] = address.split("?");
   const hook = () => [path, () => {}] as [string, (to: string) => void];
+  // A <Redirect> rendered on the server records where it leads here.
+  const ssrContext: { redirectTo?: string } = {};
   const html = renderToStaticMarkup(createElement(SettingsContext.Provider, { value: () => {} },
-    createElement(Router, { hook, searchHook: () => search }, createElement(Route, { path: "/clinicians", nest: true }, createElement(Clinicians))))).replace(/ data-loc="[^"]*"/g, "");
-  return { html, text: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ") };
+    createElement(Router, { hook, searchHook: () => search, ssrContext }, createElement(Route, { path: "/clinicians", nest: true }, createElement(Clinicians))))).replace(/ data-loc="[^"]*"/g, "");
+  return { html, text: html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " "), redirectTo: ssrContext.redirectTo };
 }
 
 const RESERVED = ["by-condition", "consultations", "urgent", "portal", "meet"];
@@ -77,57 +79,63 @@ describe("the clinicians", () => {
     expect(upcomingSessions([created], MONDAY)[0].id).toBe("s-test");
     expect(upcomingSessions([created], new Date(MONDAY.getTime() + 40 * 60_000)).some(session => session.id === "s-test")).toBe(false);
   });
+
+  it("are the network's example clinicians, each with a photo, workplace, place and summary", () => {
+    for (const person of CLINICIANS) {
+      expect(person.photo, person.id).toBe(`/photos/clinicians/${person.id}.jpg`);
+      for (const field of ["org", "place", "summary"] as const) expect(person[field], `${person.id}: ${field}`).toBeTruthy();
+    }
+    // Renamed for this edition, and two added.
+    expect(findClinician("michael-chau")?.name).toBe("Dr Michael Chau");
+    expect(findClinician("joseph-hartley")?.name).toBe("Joseph Hartley");
+    expect(findClinician("meilin-chau")).toBeUndefined();
+    expect(findClinician("joseph-adeyemi")).toBeUndefined();
+    expect(findClinician("arjun-mehta")?.name).toBe("Dr Arjun Mehta");
+    expect(findClinician("imani-clarke")?.name).toBe("Imani Clarke");
+    // The demo clinician hosts two weekly sessions.
+    expect(WEEKLY_SESSIONS.filter(session => session.clinicianId === "amara-osei")).toHaveLength(2);
+  });
 });
 
 describe("the Clinicians tab", () => {
-  it("lists every clinician with a price, the Library's condition areas as filters, group sessions, and says they are examples", () => {
+  it("is a directory of colleagues with the Library's condition areas as filters, and no prices, booking or urgent route", () => {
     const { html, text } = draw("/clinicians");
-    expect(text).toContain("Find a clinician");
-    expect(text).toContain(`${CLINICIANS.length} clinicians`);
-    for (const person of CLINICIANS) {
-      expect(html).toContain(`href="/clinicians/${person.id}"`);
-      expect(text).toContain(`£${person.price} per consultation`);
-    }
     for (const area of ["All areas", "Brain &amp; nervous system", "Kidneys, liver &amp; digestion"]) expect(html).toContain(area);
-    expect(text).toContain("Weekly group sessions");
-    // Each card's short "Book" button still says in full what it does, for screen readers.
-    expect(html).toContain(`aria-label="Book a consultation with ${CLINICIANS[0].name}"`);
+    expect(html).toContain('aria-label="Search"');
+    expect(text).toContain("example clinicians while the network is being set up");
+    // The patient edition's booking from the directory is gone: no prices, Book buttons or urgent route.
+    for (const person of CLINICIANS) expect(text).not.toContain(`£${person.price} per consultation`);
+    expect(text).not.toMatch(/£\d/);
+    expect(html).not.toContain('aria-label="Book a consultation with');
+    expect(text).not.toContain("If something feels urgent, call 999");
     expect(text).not.toMatch(/in person/i);
-    expect(text).toContain("If something feels urgent, call 999");
-    expect(text).toContain("examples while the directory is being set up");
-    for (const href of ["/clinicians/consultations", "/clinicians/sessions", "/clinicians/urgent"]) expect(html).toContain(`href="${href}"`);
-    // The "Browse clinicians by condition area" link was removed from the search band (the page itself stays reachable).
-    expect(html).not.toContain('href="/clinicians/by-condition"');
-    // No portal link beside the tabs.
-    expect(html).not.toContain('href="/clinicians/portal"');
-    // The search band is the main thing, and the urgent route is one button.
-    expect(html).toContain('class="cl-band"');
-    expect(html).toMatch(/<a (?=[^>]*class="cl-tab")(?=[^>]*aria-current="page")[^>]*href="\/clinicians\/"/);
-    expect(text).toContain("Need someone urgently");
-    expect(text).not.toContain("Need someone today");
+    for (const href of ["/clinicians/consultations", "/clinicians/sessions", "/clinicians/urgent", "/clinicians/by-condition", "/clinicians/portal"]) expect(html).not.toContain(`href="${href}"`);
+    expect(text).not.toContain("Find a clinician");
   });
 
-  /** The three parts' panels on the tab's page: [id, hidden]. */
+  /** The parts' panels on the tab's page: [id, hidden]. */
   const panels = (html: string) => [...html.matchAll(/<div id="cl-panel-(\w+)" class="cl-tab-panel"( hidden="")?/g)].map(match => [match[1], !!match[2]]);
 
-  it("shows the chosen tab's part beneath the tabs on the same page, the others there but hidden", () => {
-    expect(panels(draw("/clinicians").html)).toEqual([["find", false], ["consultations", true], ["sessions", true]]);
-    expect(panels(draw("/clinicians/consultations").html)).toEqual([["find", true], ["consultations", false], ["sessions", true]]);
-    expect(panels(draw("/clinicians/sessions").html)).toEqual([["find", true], ["consultations", true], ["sessions", false]]);
-    // The heading and tabs stay the same whichever part is showing.
-    for (const path of ["/clinicians", "/clinicians/consultations", "/clinicians/sessions"]) {
-      const { html } = draw(path);
-      expect(html.match(/<h1[^>]*>Clinicians/g)).toHaveLength(1);
-      expect((html.match(/class="cl-tab"/g) ?? []).length).toBe(3);
-    }
+  it("has no tabs: the directory stands alone, and the old tab addresses lead to the clinician's own destinations", () => {
+    const { html } = draw("/clinicians");
+    expect(panels(html)).toEqual([["find", false]]);
+    expect(html).not.toContain('class="cl-tab"');
+    expect(html.match(/<h1[^>]*>Clinicians/g)).toHaveLength(1);
+    // My consultations is in the portal now.
+    const consultations = draw("/clinicians/consultations");
+    expect(consultations.redirectTo).toBe("~/clinicians/portal/consultations");
+    expect(consultations.html).toBe("");
+    expect(draw("/clinicians").redirectTo).toBeUndefined();
   });
 
-  it("lists every upcoming group session under the Weekly group sessions tab, with how sessions work", () => {
-    const { html, text } = draw("/clinicians/sessions");
-    expect(text).toContain("Weekly group sessions");
-    expect(text).toContain("How sessions work");
-    expect((html.match(/class="cl-session"/g) ?? []).length).toBe(nextWeeklySessions(new Date()).length);
-    expect(html).toMatch(/<a (?=[^>]*class="cl-tab")(?=[^>]*aria-current="page")[^>]*href="\/clinicians\/sessions"/);
+  it("sends the old Weekly group sessions tab to Group weekly sessions in the community, which the menu links to", () => {
+    const sessions = draw("/clinicians/sessions");
+    expect(sessions.redirectTo).toBe("~/community?space=circle");
+    expect(sessions.html).toBe("");
+    const { html, text } = draw("/clinicians");
+    expect(html).toContain('href="/community?space=circle"');
+    expect(text).toContain("Group weekly sessions");
+    expect(html).not.toContain('class="cl-session"');
   });
 
   it("browses by condition area with every Library section and group, each opening the directory narrowed to it", () => {
@@ -153,34 +161,41 @@ describe("the Clinicians tab", () => {
     expect(html).toContain('aria-label="Remove filter Heart rhythm"');
   });
 
-  it("opens a profile with price and experience, conditions leading to the Library, and Book a consultation asking if it's urgent", () => {
-    const { html, text } = draw("/clinicians/amara-osei");
-    expect(text).toContain("Dr Amara Osei");
-    expect(text).toContain("Registered with the GMC");
-    expect(text).toContain("Consultant stroke physician");
-    expect(text).toContain("14 years&#x27; experience");
-    expect(text).toContain("1,320 consultation hours");
-    expect(text).toContain("£85");
-    expect(html).toContain('href="/library/stroke/ischaemic"');
-    expect(html).toContain('id="book"');
-    expect(text).toContain("Book a consultation");
-    expect(text).toContain("Is it urgent?");
-    expect(html).toContain('href="/clinicians/urgent"');
-    expect(text).toContain("Call 999 now");
+  it("opens a colleague's profile with registration, experience and conditions leading to the Library, and no price or booking", () => {
+    const { html, text } = draw("/clinicians/ruth-calloway");
+    expect(text).toContain("Ruth Calloway");
+    expect(text).toContain("Registered with the NMC");
+    expect(text).toContain("Specialist cardiac rehabilitation nurse");
+    expect(text).toContain("Whitby Cardiac Rehabilitation");
+    expect(text).toContain("10 years&#x27; experience");
+    expect(html).toContain('href="/library/heart-attack/heart-attack"');
+    expect(html).toContain('href="/library/blood-pressure/high-blood-pressure"');
+    // The patient edition's price, consultation hours, Book a consultation and urgent route are gone.
+    expect(text).not.toMatch(/£\d|consultation hours|Book a consultation|Is it urgent\?/);
+    expect(html).not.toContain('id="book"');
+    expect(html).not.toContain('href="/clinicians/urgent"');
     expect(text).not.toMatch(/in person/i);
   });
 
-  it("has an urgent page, My consultations, the clinician portal and the meeting room, none taken for a clinician", () => {
+  it("keeps the urgent page, the clinician portal (as the signed-in clinician) and the meeting room, none taken for a clinician", () => {
+    // No longer offered from the directory, but its address still works.
     expect(draw("/clinicians/urgent").text).toContain("Alert clinicians now");
-    expect(draw("/clinicians/consultations").text).toContain("No consultations yet");
-    expect(draw("/clinicians/portal").text).toContain("Try the portal as");
-    for (const page of ["requests", "schedule", "consultations", "sessions", "earnings", "profile"]) expect(draw(`/clinicians/portal/${page}`).text).toContain("Try the portal as");
+    const portal = draw("/clinicians/portal").text;
+    expect(portal).toContain("Clinician portal");
+    expect(portal).toContain("Using the demo profile of Dr Amara Osei");
+    for (const page of ["", "requests", "schedule", "consultations", "sessions", "earnings", "profile"]) {
+      const { text } = draw(`/clinicians/portal/${page}`);
+      expect(text, page).not.toContain("Try the portal as");
+      expect(text, page).toContain("Dr Amara Osei");
+    }
     expect(draw("/clinicians/meet/abcdefghijklmnop").text).toContain("isn&#x27;t on this device");
-    for (const path of ["/clinicians/urgent", "/clinicians/consultations", "/clinicians/portal"]) expect(draw(path).text).not.toContain("We couldn&#x27;t find that clinician");
+    for (const path of ["/clinicians/urgent", "/clinicians/portal"]) expect(draw(path).text).not.toContain("We couldn&#x27;t find that clinician");
   });
 
-  it("says so when a clinician isn't found", () => {
+  it("says so when a clinician isn't found, including at the old addresses of renamed clinicians", () => {
     expect(draw("/clinicians/nobody").text).toContain("We couldn&#x27;t find that clinician");
+    for (const old of ["meilin-chau", "joseph-adeyemi"]) expect(draw(`/clinicians/${old}`).text).toContain("We couldn&#x27;t find that clinician");
+    expect(draw("/clinicians/michael-chau").text).toContain("Dr Michael Chau");
   });
 });
 

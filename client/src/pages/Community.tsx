@@ -1,25 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import RecoveryShell from "@/components/RecoveryShell";
-import CircleView from "@/components/community/Circle";
 import FeedView from "@/components/community/Feed";
 import FriendsDrawer from "@/components/community/FriendsDrawer";
-import PokerNightDialog from "@/components/community/games/PokerNightDialog";
-import PokerSpace from "@/components/community/games/PokerSpace";
 import GroupsView from "@/components/community/Groups";
 import { BackIcon } from "@/components/community/icons";
-import LoungeView from "@/components/community/Lounge";
 import MessagesView from "@/components/community/Messages";
+import ProfessionalEventsView from "@/components/community/ProfessionalEvents";
+import WeeklySessionsView from "@/components/community/WeeklySessions";
 import PostMenu from "@/components/community/PostMenu";
 import { useOptionalSettings } from "@/components/AccountSettings";
 import SafetyView from "@/components/community/SafetyView";
 import StartGroupView from "@/components/community/StartGroup";
-import { lounge, type FriendsTab } from "@/content/community-samples";
+import { type FriendsTab } from "@/content/community-samples";
 import { useAlertsPanel } from "@/lib/alerts-panel";
-import { communityHref, communityViewFromQuery, firstName, useCommunity, type CommunitySpace, type SafetyTarget } from "@/lib/community-store";
+import { communityHref, communityViewFromQuery, useCommunity, type CommunitySpace, type SafetyTarget } from "@/lib/community-store";
 import { fastCheckPath } from "@/lib/fast-check";
-import { pokerNight, pokerNightOn, shouldPop, usePokerNight } from "@/lib/poker-night";
-import { profileName, useProfile } from "@/lib/profile";
+import { useMe } from "@/lib/me";
 import { todayLabel } from "./Welcome";
 import "./community.css";
 import "./community-spaces.css";
@@ -34,26 +31,25 @@ import "./community-daily.css";
 import "./community-picture.css";
 import "./community-poker.css";
 
-// My community: a feed where everybody posts, with the lounge, the Sunday circle, groups and messages
-// as tabs in the top bar; Alerts and Friends are rows in the profile panel on the left. A little
-// Messages window waits at the bottom right of every page (the shell draws it). It is a
-// preview: the people in it are examples, and nothing leaves the device.
+// Rehyn Connect for clinicians: a feed of other clinicians' posts, with the clinician's group weekly sessions with
+// patients, professional groups and messages as tabs in the top bar; My Network and My professional events are rows
+// in the profile panel on the left. A little Messages window waits at the bottom right of every page (the shell draws
+// it). It is a preview: the people in it are example clinicians, and nothing leaves the device.
 // The address says which view is open, so every button that opens a page is a link and Back works:
 //   /community                           the feed
-//   /community?space=lounge              the lounge
-//   /community?space=circle              the Sunday circle
-//   /community?space=poker               Friday poker night: tonight's tables and a table to play at
+//   /community?space=circle              group weekly sessions (the clinician's Q&A sessions with patients)
+//   /community?space=events              my professional events (peer events with other clinicians)
+//   /community?space=lounge, =poker      retired: they open the feed (the lounge is gone for both editions)
 //   /community?space=groups&group=walk   my groups, with one open
-//   /community?space=messages&chat=anne  messages, with a conversation open
+//   /community?space=messages&chat=grace  messages, with a conversation open
 //   /community?space=start               start a group
 //   /community?space=settings            retired: it opens Settings → Your profile over the feed (&section= names a part)
 //   /community?space=friends             retired: the same
 //   /community?space=safety              safety: reports, blocked and hidden people
 //   ...&panel=friends&tab=sent           the Friends drawer, open over any of these
 // Alerts and the hide, block or report sheet (a post's ··· button) open on the page itself.
-// On Fridays the poker night pop-up opens by itself, once a day (`?poker=friday` shows it any day).
 /** The spaces that use the full width, without the profile panel on the left (review comments C77, C80). */
-const NO_PANEL = new Set<CommunitySpace>(["groups", "messages", "start", "poker"]);
+const NO_PANEL = new Set<CommunitySpace>(["groups", "messages", "start"]);
 
 export default function Community() {
   const search = useSearch();
@@ -70,11 +66,9 @@ export default function Community() {
     navigate(communityHref("feed", null, { panel: asked.panel ?? null, tab: asked.tab ?? null }), { replace: true });
     if (!asked.panel) openSettings?.(null, "profile", asked.section ?? undefined);
   }, [toSettings, asked.panel, asked.tab, asked.section, navigate, openSettings]);
-  const profile = useProfile();
-  const name = firstName(profileName(profile));
+  // The signed-in clinician, the same everywhere (comment 21).
+  const name = useMe().name;
   const memory = useCommunity();
-  const poker = usePokerNight();
-  const [here, setHere] = useState(lounge.here);
   // A space stays as it was left once it has been opened in this visit.
   const [visited, setVisited] = useState<CommunitySpace[]>(() => [view.space]);
   // Alerts opens from the profile panel's row; the shell draws the panel (lib/alerts-panel.ts).
@@ -86,7 +80,7 @@ export default function Community() {
   const viewNow = useRef(view);
   viewNow.current = view;
   const friendsOpen = view.panel === "friends";
-  const overlayOpen = friendsOpen || alertsOpen || menu !== null || poker.dialogOpen;
+  const overlayOpen = friendsOpen || alertsOpen || menu !== null;
   const overlayWasOpen = useRef(overlayOpen);
   // Whether the drawer was opened during this visit, so closing it can step Back rather than add a page.
   const friendsOpenedHere = useRef(false);
@@ -128,20 +122,6 @@ export default function Community() {
   // A new address (a link, or the browser's Back button) closes the panels and the sheets.
   useEffect(() => { setMenu(null); }, [search]);
 
-  // Poker night: `?poker=friday` keeps it on for this browser session. The pop-up opens by itself once
-  // a day on poker night, unless the person said "Not tonight" this week or has already picked; a new
-  // address after that closes it, like the other sheets.
-  const pokerOn = pokerNightOn(poker);
-  const pokerSearch = useRef(search);
-  useEffect(() => {
-    pokerNight.noteAddress(search);
-    if (pokerSearch.current !== search) { pokerSearch.current = search; pokerNight.close(); }
-  }, [search]);
-  useEffect(() => {
-    const now = new Date();
-    if (shouldPop(poker, now, pokerOn) && !poker.dialogOpen) pokerNight.popped(now);
-  }, [pokerOn]);
-
   /** The heading of the view showing now: where the focus goes when what opened a dialog has gone. */
   const headingNow = useCallback(() => {
     const root = page.current;
@@ -167,15 +147,14 @@ export default function Community() {
   const textSize = memory.settings.textSize === "normal" ? "" : `cm-text-${memory.settings.textSize}`;
 
   return (
-    <RecoveryShell active="My Community" dateLabel={todayLabel()} className="cm-shell" loungeHere={here} panel={!NO_PANEL.has(view.space)}>
+    <RecoveryShell active="My Community" dateLabel={todayLabel()} className="cm-shell" panel={!NO_PANEL.has(view.space)}>
       <div ref={page} className={`recovery-page cm-page cm-view-${view.space} ${textSize}`}>
         {/* The page's name for a screen reader, and where the focus lands when a view has no heading of its own. */}
-        <h1 className="cm-sr" tabIndex={-1} data-page-heading>My community</h1>
+        <h1 className="cm-sr" tabIndex={-1} data-page-heading>Rehyn Connect for clinicians</h1>
 
-        {isOpen("feed") && <div className="cm-space" data-space="feed" hidden={view.space !== "feed"}><FeedView name={name} here={here} onMore={openMenu} openPostId={menu?.target.postId ?? null} /></div>}
-        {isOpen("lounge") && <div className="cm-space" data-space="lounge" hidden={view.space !== "lounge"}><LoungeView active={view.space === "lounge"} here={here} onHere={setHere} /></div>}
-        {isOpen("circle") && <div className="cm-space" data-space="circle" hidden={view.space !== "circle"}><CircleView active={view.space === "circle"} name={name} /></div>}
-        {isOpen("poker") && <div className="cm-space" data-space="poker" hidden={view.space !== "poker"}><PokerSpace active={view.space === "poker"} /></div>}
+        {isOpen("feed") && <div className="cm-space" data-space="feed" hidden={view.space !== "feed"}><FeedView name={name} onMore={openMenu} openPostId={menu?.target.postId ?? null} /></div>}
+        {isOpen("circle") && <div className="cm-space" data-space="circle" hidden={view.space !== "circle"}><WeeklySessionsView active={view.space === "circle"} /></div>}
+        {isOpen("events") && <div className="cm-space" data-space="events" hidden={view.space !== "events"}><ProfessionalEventsView /></div>}
         {isOpen("groups") && <div className="cm-space" data-space="groups" hidden={view.space !== "groups"}><GroupsView active={view.space === "groups"} requested={view.group} /></div>}
         {isOpen("messages") && <div className="cm-space" data-space="messages" hidden={view.space !== "messages"}><MessagesView active={view.space === "messages"} chat={view.chat ?? null} onPersonMenu={openMenu} /></div>}
         {isOpen("safety") && <div className="cm-space" data-space="safety" hidden={view.space !== "safety"}><SafetyView name={name} warningSignsHref={fastCheckPath(location, search)} onPersonMenu={openMenu} /></div>}
@@ -184,7 +163,7 @@ export default function Community() {
             <header className="cm-start-head">
               <Link className="cm-back" href={communityHref("groups")}><BackIcon size={18} /><span>Groups by condition</span></Link>
               <h1 className="cm-title" tabIndex={-1} data-view-heading>Start a group</h1>
-              <p className="cm-start-intro">A smaller group inside your condition: private unless you choose otherwise, with a chat, photos and games.</p>
+              <p className="cm-start-intro">A professional group inside a condition network: private unless you choose otherwise, with a group chat for case discussion and shared resources.</p>
             </header>
             <StartGroupView name={name} />
           </div>
@@ -195,7 +174,6 @@ export default function Community() {
       <div className={`cm-layer ${textSize}`}>
         {friendsOpen && <FriendsDrawer tab={view.tab ?? "requests"} onTab={showTab} onClose={closeFriends} onPersonMenu={openMenu} fallbackFocus={friendsButton} name={name} />}
         {menu && <PostMenu target={menu.target} name={name} onClose={() => setMenu(null)} returnFocus={menu.opener} fallbackFocus={headingNow} startAt={menu.startAt} />}
-        {poker.dialogOpen && <PokerNightDialog name={name} onClose={pokerNight.close} fallbackFocus={headingNow} />}
       </div>
     </RecoveryShell>
   );

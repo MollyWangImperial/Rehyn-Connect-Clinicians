@@ -104,10 +104,10 @@ describe("seatTables", () => {
 
 describe("tonight's example tables", () => {
   it("seats the person with their friends at the game they picked", () => {
-    const tables = tonightsTables(POKER_PLAYERS, { game: "holdem", friends: ["david", "margaret", "anne"] });
+    const tables = tonightsTables(POKER_PLAYERS, { game: "holdem", friends: ["kwame", "hannah", "grace"] });
     const mine = tables.find(table => table.players.includes(ME));
     expect(mine?.game).toBe("holdem");
-    expect(mine?.players).toEqual(expect.arrayContaining([ME, "margaret", "david"]));
+    expect(mine?.players).toEqual(expect.arrayContaining([ME, "hannah", "kwame"]));
     expect(tables.filter(table => table.game === "holdem").reduce((sum, table) => sum + table.players.length, 0)).toBe(17);
   });
 

@@ -27,8 +27,9 @@ const settings = (patch: Partial<CommunitySettings> = {}): CommunitySettings => 
 
 describe("Community settings: the line under each section", () => {
   it("sums up the settings as they start", () => {
+    // The clinician edition starts with no hidden words.
     expect(settingsSummaries(settings(), NOW)).toEqual({
-      see: ["Gentle mode on", "2 hidden words"],
+      see: ["Gentle mode on", "no hidden words"],
       read: ["Read aloud off", "normal text"],
       quiet: ["Quiet from 9 pm to 8 am"],
     });
@@ -62,20 +63,20 @@ describe("Community settings: where a link that names a section lands", () => {
 
 describe("Community settings: Your privacy", () => {
   it("says what each choice means, on this device and nothing more", () => {
-    expect(privacyMeaning.postsSeenBy.friends).toBe("Only your friends see what you share.");
+    expect(privacyMeaning.postsSeenBy.friends).toBe("Only your connections see what you share.");
     expect(privacyMeaning.postsSeenBy.onlyMe).toBe("What you share stays with you.");
     expect(privacyMeaning.messagesFrom.noOne).toBe("No one can message you.");
-    expect(privacyMeaning.messagesFrom.friendsAndGroups).toBe("Friends, and people in your groups, can message you.");
-    expect(privacyMeaning.requestsFrom.friendsOfFriends).toBe("Only friends of your friends can ask.");
-    expect(privacyMeaning.requestsFrom.noOne).toContain("Requests already waiting stay in Friends.");
+    expect(privacyMeaning.messagesFrom.friendsAndGroups).toBe("Connections, and clinicians in your groups, can message you.");
+    expect(privacyMeaning.requestsFrom.friendsOfFriends).toBe("Only connections of your connections can ask.");
+    expect(privacyMeaning.requestsFrom.noOne).toContain("Requests already waiting stay in My Network.");
     for (const group of Object.values(privacyMeaning)) for (const text of Object.values(group)) expect(text).not.toMatch(/told|notified/i);
   });
 });
 
 describe("Community settings: who can see my posts", () => {
   it("names each choice the same way beside a post, in the summary and once posted", () => {
-    expect(postsAudience("friends")).toEqual({ label: "Friends", summary: "posts for friends", posted: "Posted for your friends." });
-    expect(postsAudience("everyone")).toEqual({ label: "Everyone", summary: "posts for everyone", posted: "Posted for everyone in My community." });
+    expect(postsAudience("friends")).toEqual({ label: "Connections", summary: "posts for connections", posted: "Posted for your connections." });
+    expect(postsAudience("everyone")).toEqual({ label: "All clinicians", summary: "posts for all clinicians", posted: "Posted for every clinician on Rehyn Connect." });
     expect(postsAudience("onlyMe")).toEqual({ label: "Only me", summary: "posts just for you", posted: "Posted. Only you can see it." });
   });
 });
@@ -135,14 +136,14 @@ describe("Community settings: the card preview", () => {
 
   it("takes the sample post from someone the person still sees, without a hidden word", () => {
     const memory = blankCommunityMemory();
-    expect(sampleLine(memory)).toEqual({ who: "margaret", text: "First tomatoes off the windowsill!" });
-    memory.blocks = { margaret: NOW };
-    expect(sampleLine(memory).who).toBe("joan");
-    memory.muted = { joan: NOW };
-    expect(sampleLine(memory).who).toBe("david");
+    expect(sampleLine(memory)).toEqual({ who: "hannah", text: "Our seven-day ESD service has halved 30-day readmissions." });
+    memory.blocks = { hannah: NOW };
+    expect(sampleLine(memory).who).toBe("ruth");
+    memory.muted = { ruth: NOW };
+    expect(sampleLine(memory).who).toBe("kwame");
     const words = blankCommunityMemory();
-    words.settings.hiddenWords = ["tomatoes", "cardigan", "biscuit"];
-    expect(sampleLine(words)).toEqual({ who: null, text: "This is the size posts are in My community." });
+    words.settings.hiddenWords = ["readmissions", "cardiac", "screening"];
+    expect(sampleLine(words)).toEqual({ who: null, text: "This is the size posts are in the feed." });
   });
 });
 
@@ -163,10 +164,12 @@ describe("Community settings: hidden words", () => {
     expect(hiddenWordProblem("Don’t", ["don't"])).toBe("Posts that mention “don't” are already hidden.");
   });
 
-  it("offers the suggested words in turn, then any starting word taken off", () => {
-    expect(nextSuggestedWord(["hospital", "falls"])).toBe("money");
-    expect(nextSuggestedWord(["hospital", "falls", "money"])).toBe("cure");
-    expect(nextSuggestedWord(["hospital", "money", "cure", "politics"])).toBe("falls");
-    expect(nextSuggestedWord(["hospital", "falls", "money", "cure", "politics"])).toBeNull();
+  it("offers the suggested words in turn, and nothing once they are all hidden", () => {
+    // The clinician edition suggests "sponsored", "supplement" and "politics", and starts with no hidden words.
+    expect(nextSuggestedWord([])).toBe("sponsored");
+    expect(nextSuggestedWord(["sponsored"])).toBe("supplement");
+    expect(nextSuggestedWord(["sponsored", "politics"])).toBe("supplement");
+    expect(nextSuggestedWord(["supplement", "sponsored"])).toBe("politics");
+    expect(nextSuggestedWord(["sponsored", "supplement", "politics"])).toBeNull();
   });
 });

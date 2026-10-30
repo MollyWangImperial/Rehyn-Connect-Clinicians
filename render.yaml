@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: rehyn-connect
+    name: rehyn-connect-clinicians
     runtime: node
     plan: free
     region: frankfurt

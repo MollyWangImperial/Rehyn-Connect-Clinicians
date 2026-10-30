@@ -1,0 +1,86 @@
+/* Group weekly sessions (WeeklySessions.tsx): the clinician's patient Q&A sessions in the shared professional look
+   (clinician-edition.css): neutral surfaces, one accent, 6–8px corners, and no motion beyond hover colour. The list
+   and the open session's details sit side by side once there is room, and one above the other on a phone. */
+
+.ws { container: ws / inline-size; display: flex; flex-direction: column; gap: 16px; color: var(--cx-ink); font-family: var(--cx-font); }
+.ws :where(h1, h2, h3, p, ul, ol, dl, dd) { margin: 0; }
+.ws a:not(.cx-btn) { color: var(--cx-accent); }
+
+.ws-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; }
+.ws-head > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 62ch; }
+.ws-title { font: 700 28px/1.2 var(--cx-font); letter-spacing: -0.01em; color: var(--cx-ink); }
+.ws-title:focus { outline: none; }
+.ws-title:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 4px; }
+.ws-lead { color: var(--cx-muted); font-size: 15px; line-height: 1.5; }
+.ws-schedule { flex: none; }
+
+.ws-h2 { font: 700 16px/1.3 var(--cx-font); color: var(--cx-ink); }
+.ws-h3 { display: flex; align-items: center; gap: 8px; font: 700 14px/1.3 var(--cx-font); color: var(--cx-ink); }
+.ws-note { color: var(--cx-muted); font-size: 13.5px; line-height: 1.5; }
+.ws-notice { padding: 10px 12px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-warn-soft); color: var(--cx-warn); font-size: 13.5px; }
+.ws-pill-done { background: var(--cx-subtle); color: var(--cx-faint); }
+
+/* The three counts under the heading. */
+.ws-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ws-stats > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; }
+.ws-stats dt { color: var(--cx-muted); font-size: 12px; font-weight: 600; }
+.ws-stats dd { font: 700 20px/1.2 var(--cx-font); color: var(--cx-ink); }
+
+.ws-layout { display: grid; gap: 16px; align-items: start; }
+.ws-lists { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ws-list { display: flex; flex-direction: column; gap: 8px; padding: 14px; }
+.ws-list ul { display: flex; flex-direction: column; gap: 4px; padding: 0; list-style: none; }
+
+/* A sitting in the list. */
+.ws-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 10px; border: 1px solid transparent; border-radius: var(--cx-radius); color: var(--cx-ink); text-decoration: none; transition: background-color 0.12s, border-color 0.12s; }
+.ws-row:hover { background: var(--cx-subtle); color: var(--cx-ink); }
+.ws-row:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
+.ws-row[aria-current="true"] { border-color: var(--cx-accent); background: var(--cx-accent-soft); }
+.ws-row.is-done .ws-row-title { color: var(--cx-muted); }
+.ws-date { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 52px; min-height: 58px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-surface); color: var(--cx-muted); font: 600 11px/1.3 var(--cx-font); text-transform: uppercase; letter-spacing: 0.04em; }
+.ws-date strong { color: var(--cx-ink); font: 700 19px/1.1 var(--cx-font); letter-spacing: 0; }
+.ws-row-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ws-row-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: var(--cx-muted); font-size: 12.5px; }
+.ws-row-title { font-size: 14.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.ws-row-meta { color: var(--cx-muted); font-size: 12.5px; line-height: 1.4; }
+.ws-row-q { grid-column: 2; display: inline-flex; align-items: center; gap: 5px; color: var(--cx-muted); font-size: 12px; font-weight: 600; }
+
+/* The open sitting. */
+.ws-detail { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 18px; }
+.ws-detail-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--cx-muted); font-size: 13px; }
+.ws-detail-title { font: 700 20px/1.3 var(--cx-font); color: var(--cx-ink); overflow-wrap: anywhere; }
+.ws-detail-title:focus { outline: none; }
+.ws-detail-title:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 3px; }
+.ws-detail-about { color: var(--cx-muted); font-size: 14px; line-height: 1.5; }
+.ws-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-line); }
+.ws-facts > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: var(--cx-surface); }
+.ws-facts dt { color: var(--cx-muted); font-size: 12px; font-weight: 600; }
+.ws-facts dd { font-size: 13.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.ws-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.ws-actions .ws-note { flex: 1 1 220px; }
+
+.ws-questions { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--cx-line); }
+.ws-q-list { display: flex; flex-direction: column; gap: 6px; padding: 0; list-style: none; }
+.ws-q-list li { padding: 8px 10px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-surface); font-size: 13.5px; line-height: 1.45; }
+.ws-examples { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px dashed var(--cx-line-strong); border-radius: var(--cx-radius); background: var(--cx-subtle); }
+.ws-q-list.is-example li { color: var(--cx-muted); }
+
+.ws-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 24px; }
+.ws-empty-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--cx-radius); background: var(--cx-accent-soft); color: var(--cx-accent); }
+
+@container ws (min-width: 820px) {
+  .ws-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ws-detail { position: sticky; top: 98px; max-height: calc(100vh - 112px); overflow-y: auto; scrollbar-width: thin; }
+}
+
+@container ws (max-width: 420px) {
+  .ws-stats { grid-template-columns: 1fr; }
+  .ws-stats > div { flex-direction: row; align-items: baseline; justify-content: space-between; }
+  .ws-facts { grid-template-columns: 1fr; }
+  .ws-detail { padding: 14px; }
+  .ws-schedule { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-row { transition: none; }
+}

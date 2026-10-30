@@ -18,6 +18,7 @@ import {
   STORIES_HREF,
   type ConditionPlace,
 } from "@/lib/library";
+import { useContributions } from "@/lib/library-contributions";
 import { libraryStore, useLibraryState, type LibraryState } from "@/lib/library-store";
 import {
   ArrowIcon,
@@ -37,6 +38,7 @@ import {
   SourceRow,
   useLines,
 } from "./parts";
+import { contributedParts, ContributionsByCategory } from "./AddToLibrary";
 import AskClinicians from "./AskClinicians";
 import { ConditionBento } from "./ConditionBento";
 import "@/pages/library-condition-v2.css";
@@ -276,6 +278,7 @@ export default function ConditionPage({ place }: { place: ConditionPlace }) {
   const full = Boolean(content && condition.summary);
   const key = conditionKey(place);
   const state = useLibraryState();
+  const contributions = useContributions();
   useEffect(() => { libraryStore.visit(key); }, [key]);
   const purpose = (part: keyof typeof PURPOSE) => content?.purpose?.[part] ?? PURPOSE[part](condition.title);
   const footer = content?.footer ?? LIBRARY_NOTE;
@@ -312,6 +315,7 @@ export default function ConditionPage({ place }: { place: ConditionPlace }) {
     related: <Related content={content} />,
     footer,
     purpose,
+    contributed: contributedParts(place, contributions),
   }} />;
 }
 
@@ -338,6 +342,7 @@ function PlaceholderCondition({ place, mobileBar, crumbs, state }: { place: Cond
         <SectionHead id="understand" title="Understand" />
         <ul className="lib-grid lib-grid-cards is-two" role="list">{items.map(item => <TextCard key={item.id} place={place} item={item} state={state} />)}</ul>
       </section>}
+      <ContributionsByCategory place={place} />
       {siblings.length > 0 && <section className="lib-part" aria-labelledby="lib-siblings">
         <h2 id="lib-siblings" className="lib-h2">Also in {group.title}</h2>
         <ul className="lib-condition-pills" role="list">

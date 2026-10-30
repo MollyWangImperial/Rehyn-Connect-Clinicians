@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link } from "wouter";
-import { feedPosts, feelings, isPersonId, members, people, sampleGroups, settingsChoices, type FeelingId, type PersonId, type PostsSeenBy, type SamplePost } from "@/content/community-samples";
+import { feedPosts, feelings, isClinician, isPersonId, members, people, sampleGroups, settingsChoices, type FeelingId, type PersonId, type PostsSeenBy, type SamplePost } from "@/content/community-samples";
 import {
   canSee,
   commentKey,
@@ -18,8 +18,10 @@ import {
   type PostVisibility,
 } from "@/lib/community-store";
 import { SharingLocked, useCanShare } from "@/components/SharingLocked";
-import LibraryCard from "@/components/LibraryCard";
+import { useMe } from "@/lib/me";
+import ConsultationsCard from "./ConsultationsCard";
 import SessionsTile from "./SessionsTile";
+import "./feed-clinician.css";
 import { useVoiceNote, voiceSeconds } from "./hooks";
 import { ArrowIcon, ChatIcon, CloseIcon, DotsIcon, EyeIcon, EyeOffIcon, GlobeIcon, HeartPulseIcon, LockIcon, MicIcon, PhotoIcon, SmileIcon, SpeakerIcon, StarIcon, StopIcon, ThumbDownIcon, UsersIcon } from "./icons";
 import { Face, FriendButton, MemberFace, MyFace, ReactionButton, VoiceNote } from "./parts";
@@ -46,14 +48,14 @@ function AudienceIcon({ seenBy, size = 16 }: { seenBy: PostsSeenBy; size?: numbe
   return <UsersIcon size={size} />;
 }
 
-/** The composer's audience choices, in the design's order: Friends first, then Everyone, then Only me. */
+/** The composer's audience choices: Connections first, then All clinicians, then Only me. */
 const AUDIENCE_ORDER: PostsSeenBy[] = ["friends", "everyone", "onlyMe"];
 
 /** Who will see this post, said under the choice: "Visible to your 12 friends". */
 function audienceLine(seenBy: PostsSeenBy, friends: number): string {
-  if (seenBy === "everyone") return "Visible to everyone in My community";
+  if (seenBy === "everyone") return "Visible to every verified clinician on Rehyn Connect";
   if (seenBy === "onlyMe") return "Only you will see this";
-  return friends === 0 ? "Visible to your friends, once you have some" : `Visible to your ${friends} ${friends === 1 ? "friend" : "friends"}`;
+  return friends === 0 ? "Visible to your connections, once you have some" : `Visible to your ${friends} ${friends === 1 ? "connection" : "connections"}`;
 }
 
 /**
@@ -102,7 +104,8 @@ function PostComposer({ name }: { name: string }) {
   const opener = useRef<HTMLButtonElement>(null);
   const feelingsId = useId();
   const hintId = useId();
-  const prompt = `What's new with you, ${name}?`;
+  const me = useMe();
+  const prompt = `Start a post, ${me.first}`;
 
   const focusBox = () => window.requestAnimationFrame(() => box.current?.focus());
   const expand = () => { setOpen(true); setPosted(""); };
@@ -167,14 +170,9 @@ function PostComposer({ name }: { name: string }) {
           </div>
         )}
 
+        {/* Clinicians share text and images; the patient edition's Voice, Feeling and Little win have no place here. */}
         <div className="cm-composer-chips">
-          <button type="button" className="cm-chip cm-chip-photo" onClick={() => picker.current?.click()}><PhotoIcon /><span>Photo</span></button>
-          <button type="button" className={`cm-chip cm-chip-voice ${open && voice ? "is-on" : ""}`} aria-pressed={open && voice}
-            onClick={() => { expand(); setVoice(!(open && voice)); setProblem(""); focusBox(); }}><MicIcon /><span>Voice</span></button>
-          <button type="button" className={`cm-chip cm-chip-feeling ${open && (choosing || !!feeling) ? "is-on" : ""}`} aria-expanded={open && choosing} aria-controls={open && choosing ? feelingsId : undefined}
-            onClick={() => { expand(); setChoosing(!(open && choosing)); }}><SmileIcon /><span>Feeling</span></button>
-          <button type="button" className={`cm-chip cm-chip-win ${open && win ? "is-on" : ""}`} aria-pressed={open && win}
-            onClick={() => { expand(); setWin(!(open && win)); focusBox(); }}><StarIcon /><span>Little win</span></button>
+          <button type="button" className="cm-chip cm-chip-photo" onClick={() => picker.current?.click()}><PhotoIcon /><span>Image</span></button>
           <input ref={picker} className="cm-sr" type="file" accept="image/jpeg,image/png,image/webp" tabIndex={-1} aria-hidden="true" onChange={choosePhoto} />
         </div>
 
@@ -371,9 +369,10 @@ function SamplePostCard({ post, rise, onMore, acting }: { post: SamplePost; rise
         <MemberFace who={post.who} size={48} />
         <div className="cm-post-who">
           <h3 className="cm-post-name" id={headingId}>
-            {person.name}
+            {isPersonId(post.who) ? <Link className="cm-post-author" href={`~/clinicians/${people[post.who].clinicianId}`}>{person.name}</Link> : person.name}
             {group && <> <span className="cm-post-in">in</span> <Link className="cm-inline-link" href={communityHref("groups", group.id)}>{group.name}</Link></>}
           </h3>
+          {isPersonId(post.who) && <p className="cm-post-title">{people[post.who].title}</p>}
           <p className="cm-post-meta">{post.where} · {post.when}</p>
         </div>
         {isPersonId(post.who) && <FriendButton who={post.who} />}
@@ -458,7 +457,8 @@ function HiddenWordsNote({ words, onShow }: { words: string[]; onShow: () => voi
 export default function FeedView({ name, onMore, openPostId = null }: { name: string; here?: number; onMore: OpenSafetyMenu; openPostId?: string | null }) {
   const memory = useCommunity();
   const [showWords, setShowWords] = useState(false);
-  const seen = feedPosts.map(post => ({ post, state: postVisibility(memory, post) }));
+  // Only clinicians' posts reach the clinician feed (comment 10): the author's role decides, whatever else is in the data.
+  const seen = feedPosts.filter(post => isClinician(post.who)).map(post => ({ post, state: postVisibility(memory, post) }));
   const byWords = seen.flatMap(({ state }) => (!state.shown && state.why === "words" && state.word ? [state.word] : []));
   const shown = (state: PostVisibility) => state.shown || (showWords && state.why === "words");
   let rise = 0;
@@ -476,13 +476,11 @@ export default function FeedView({ name, onMore, openPostId = null }: { name: st
         {byWords.length > 0 && !showWords && <HiddenWordsNote words={byWords} onShow={() => setShowWords(true)} />}
       </div>
       <aside className="cm-side" aria-labelledby="cm-side-feed">
-        <h2 className="cm-sr" id="cm-side-feed">Read and ask</h2>
-        <LibraryCard className="cm-rise-2" />
+        <h2 className="cm-sr" id="cm-side-feed">Your patients</h2>
+        {/* My Consultations replaces the Library card (comment 9); the weekly sessions card shows only when the
+            clinician runs some (comment 18); the patient edition's guidelines and safety block is not here (comment 19). */}
+        <ConsultationsCard />
         <SessionsTile />
-        <div className="cm-side-foot">
-          <Link className="cm-inline-link" href={communityHref("safety")}>Community guidelines and safety</Link>
-          <p>Rehyn is not an emergency service. If you think someone is having a stroke, call 999.</p>
-        </div>
       </aside>
     </div>
   );

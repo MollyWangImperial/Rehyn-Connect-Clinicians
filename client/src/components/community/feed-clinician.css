@@ -1,0 +1,85 @@
+/* The clinician feed (comments 10 and 17): white cards with small radii and a hairline border, a rectangular composer
+   in the professional-network style, plain reaction buttons and one accent colour. Scoped to the feed's space so the
+   other views keep their own styles. */
+
+[data-space="feed"] {
+  --cm-ink: var(--cx-ink);
+  --cm-muted: var(--cx-muted);
+  --cm-line: var(--cx-line);
+  --cm-green: var(--cx-accent);
+  --cm-bubble: var(--cx-subtle);
+  --cm-cream: var(--cx-surface);
+  font-family: var(--cx-font);
+}
+[data-space="feed"] .cm-more { width: 36px; height: 36px; border: 1px solid transparent; border-radius: var(--cx-radius); background: transparent; color: var(--cx-muted); }
+[data-space="feed"] .cm-more:hover { border-color: var(--cx-line); background: var(--cx-subtle); color: var(--cx-ink); }
+[data-space="feed"] .cm-layout { grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; }
+[data-space="feed"] .cm-lane, [data-space="feed"] .cm-side { gap: 10px; }
+[data-space="feed"] .cm-card { border-color: var(--cx-line); border-radius: var(--cx-radius-lg); box-shadow: var(--cx-shadow); }
+[data-space="feed"] .cm-rise, [data-space="feed"] [class*="cm-rise-"] { animation: none; }
+
+/* The composer: a rectangular prompt beside the clinician's photo, a row of quiet actions underneath. */
+[data-space="feed"] .cm-composer { padding: 14px 16px 10px; }
+[data-space="feed"] .cm-composer form { gap: 10px; }
+[data-space="feed"] .cm-composer-top { align-items: center; }
+[data-space="feed"] .cm-composer-top > .cm-face { margin-top: 0; }
+[data-space="feed"] .cm-composer-prompt {
+  height: 48px; padding: 0 16px; border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius);
+  background: var(--cx-surface); color: var(--cx-muted); font: 600 15px var(--cx-font); text-align: left;
+}
+[data-space="feed"] .cm-composer-prompt:hover { border-color: var(--cx-muted); background: var(--cx-subtle); }
+[data-space="feed"] .cm-composer-field textarea {
+  min-height: 96px; padding: 12px 14px; border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius);
+  background: var(--cx-surface); font: 400 15.5px/1.5 var(--cx-font);
+}
+[data-space="feed"] .cm-composer-field textarea:focus { outline: 2px solid var(--cx-accent); outline-offset: 0; border-color: var(--cx-accent); }
+[data-space="feed"] .cm-composer-extras { padding-left: 60px; }
+[data-space="feed"] .cm-composer-chips { justify-content: flex-start; gap: 4px; border-top: 1px solid var(--cx-line); padding-top: 6px; }
+[data-space="feed"] .cm-chip { flex: 0 0 auto; height: 40px; padding: 0 12px; border-radius: var(--cx-radius); color: var(--cx-muted); font: 600 14px var(--cx-font); }
+[data-space="feed"] .cm-chip:hover { background: var(--cx-subtle); color: var(--cx-ink); }
+[data-space="feed"] .cm-chip-photo svg { color: var(--cx-accent); }
+[data-space="feed"] .cm-audience { padding: 3px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-subtle); }
+[data-space="feed"] .cm-audience-option { min-height: 34px; padding: 0 12px; border-radius: 4px; font-size: 13.5px; }
+[data-space="feed"] .cm-audience-option.is-on { box-shadow: 0 0 0 1px var(--cx-line-strong); }
+[data-space="feed"] .cm-audience-option:has(input:focus-visible) { outline: 2px solid var(--cx-accent); }
+
+/* Buttons and inputs: rectangles with small radii, one accent. */
+[data-space="feed"] .cm-btn { min-height: 38px; padding: 0 16px; border-radius: var(--cx-radius); font: 600 14.5px var(--cx-font); }
+[data-space="feed"] .cm-btn-green { background: var(--cx-accent); }
+[data-space="feed"] .cm-btn-green:hover { background: var(--cx-accent-hover); }
+[data-space="feed"] .cm-btn-quiet { border: 1px solid var(--cx-line-strong); color: var(--cx-ink); }
+[data-space="feed"] .cm-btn-quiet:hover { background: var(--cx-subtle); }
+[data-space="feed"] .cm-chat-field input { height: 40px; padding: 0 14px; border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius); font: 400 14.5px var(--cx-font); }
+[data-space="feed"] .cm-round { border-radius: var(--cx-radius); }
+[data-space="feed"] .cm-round-small { width: 40px; height: 40px; }
+[data-space="feed"] .cm-round-send { background: var(--cx-accent); }
+[data-space="feed"] .cm-round-send:hover { background: var(--cx-accent-hover); }
+[data-space="feed"] .cm-quick { min-height: 34px; padding: 0 12px; border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius); background: var(--cx-surface); color: var(--cx-ink); font: 600 13.5px var(--cx-font); }
+[data-space="feed"] .cm-quick:hover { background: var(--cx-subtle); }
+[data-space="feed"] .cm-quick-mint, [data-space="feed"] .cm-quick-blue, [data-space="feed"] .cm-quick-amber, [data-space="feed"] .cm-quick-lilac, [data-space="feed"] .cm-quick-rose { background: var(--cx-surface); color: var(--cx-ink); }
+
+/* Posts: author, professional title, organisation and time; plain reactions. */
+[data-space="feed"] .cm-post { gap: 10px; padding: 16px; }
+[data-space="feed"] .cm-post-name { margin: 0; font-size: 15.5px; font-weight: 700; }
+[data-space="feed"] .cm-post-author { color: var(--cx-ink); text-decoration: none; }
+[data-space="feed"] .cm-post-author:hover { color: var(--cx-accent); text-decoration: underline; }
+[data-space="feed"] .cm-post-title { margin: 1px 0 0; color: var(--cx-muted); font-size: 13px; line-height: 1.35; }
+[data-space="feed"] .cm-post-meta { color: var(--cx-faint); font-size: 12.5px; }
+[data-space="feed"] .cm-post-text { font-size: 15px; line-height: 1.55; }
+[data-space="feed"] .cm-inline-link { color: var(--cx-accent); }
+[data-space="feed"] .cm-react { min-height: 34px; padding: 0 10px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-surface); font: 600 13px var(--cx-font); }
+[data-space="feed"] .cm-react:hover { background: var(--cx-subtle); }
+[data-space="feed"] .cm-react.is-on { border-color: var(--cx-accent); background: var(--cx-accent-soft); color: var(--cx-accent); }
+[data-space="feed"] .cm-friend { min-height: 32px; padding: 0 12px; border: 1px solid var(--cx-accent); border-radius: var(--cx-radius); background: var(--cx-surface); color: var(--cx-accent); font: 600 13px var(--cx-font); }
+[data-space="feed"] .cm-friend:hover { background: var(--cx-accent-soft); }
+[data-space="feed"] .cm-friend.is-on, [data-space="feed"] .cm-friend.is-friend { border-color: var(--cx-line-strong); color: var(--cx-muted); }
+[data-space="feed"] .cm-comment-body p { font-size: 14px; }
+[data-space="feed"] .cm-comment-body, [data-space="feed"] .cm-comment > div { border-radius: var(--cx-radius); }
+
+@media (max-width: 1179px) {
+  [data-space="feed"] .cm-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  [data-space="feed"] .cm-composer-extras { padding-left: 0; }
+  [data-space="feed"] .cm-composer-foot { flex-direction: column; align-items: stretch; }
+}

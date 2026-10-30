@@ -1,0 +1,68 @@
+/* "Add to library" (components/library/AddToLibrary.tsx): the clinician bar at the top of Library pages, the
+   contribution form, and the contributions shown on a condition's page. In the clinician edition's look
+   (clinician-edition.css tokens): neutral surfaces, one accent, 6-8px corners, minimal motion. */
+
+/* The bar. */
+.lib-contrib-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; width: 100%; max-width: 1180px; margin: 12px auto 0; padding: 10px clamp(16px, 4vw, 48px); font-family: var(--cx-font); }
+.lib-contrib-bar-words { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; color: var(--cx-muted); font-size: 14px; line-height: 1.4; }
+.lib-contrib-bar-words .cx-kicker { color: var(--cx-accent); }
+
+/* The form. */
+.cm-dialog.lib-contrib-dialog { gap: 18px; padding: 22px 24px 24px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); background: var(--cx-surface); color: var(--cx-ink); font-family: var(--cx-font); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18); animation: none; }
+.lib-contrib-dialog :where(h2, p, fieldset, legend) { margin: 0; }
+.lib-contrib-dialog-head { display: flex; align-items: flex-start; gap: 12px; }
+.lib-contrib-dialog-head > div { display: flex; flex: 1; flex-direction: column; gap: 6px; min-width: 0; }
+.lib-contrib-dialog h2 { font: 650 22px/1.2 var(--cx-font); color: var(--cx-ink); }
+.lib-contrib-dialog h2:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 3px; }
+.lib-contrib-dialog-note { color: var(--cx-muted); font-size: 14px; line-height: 1.5; }
+.lib-contrib-close { flex: none; width: 36px; padding: 0; }
+.lib-contrib-form { display: flex; flex-direction: column; gap: 18px; }
+.lib-contrib-form fieldset { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 0; border: 0; }
+.lib-contrib-form legend { padding: 0 0 2px; color: var(--cx-muted); font: 600 12px/1.4 var(--cx-font); letter-spacing: 0.04em; text-transform: uppercase; }
+.lib-contrib-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lib-contrib-field label { color: var(--cx-ink); font: 600 14px/1.3 var(--cx-font); }
+.lib-contrib-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.lib-contrib-req, .lib-contrib-opt { margin-left: 4px; color: var(--cx-faint); font-weight: 500; font-size: 12px; }
+.lib-contrib-count { color: var(--cx-faint); font: 500 12px/1 var(--cx-font); font-variant-numeric: tabular-nums; }
+.lib-contrib-count.is-over { color: var(--cx-danger); }
+.lib-contrib-field :where(input, select, textarea) { width: 100%; min-height: 40px; padding: 8px 10px; border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius); background: var(--cx-surface); color: var(--cx-ink); font: 400 15px/1.4 var(--cx-font); box-sizing: border-box; }
+.lib-contrib-field textarea { resize: vertical; }
+.lib-contrib-field :where(input, select, textarea):focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 1px; border-color: var(--cx-accent); }
+.lib-contrib-field [aria-invalid="true"] { border-color: var(--cx-danger); }
+.lib-contrib-hint { color: var(--cx-muted); font-size: 13px; line-height: 1.4; }
+.lib-contrib-error { color: var(--cx-danger); font: 600 13px/1.4 var(--cx-font); }
+.lib-contrib-summary-error, .lib-contrib-save-error { padding: 10px 12px; border: 1px solid var(--cx-danger); border-radius: var(--cx-radius); background: #FBEDEA; color: var(--cx-danger); font: 600 14px/1.45 var(--cx-font); }
+.lib-contrib-save-error:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
+.lib-contrib-as { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--cx-radius); background: var(--cx-subtle); color: var(--cx-muted); font-size: 13.5px; line-height: 1.4; }
+.lib-contrib-as b { color: var(--cx-ink); }
+.lib-contrib-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* The contributions on a condition's page, at the end of the part they were added to. */
+.lib-contrib-part { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; font-family: var(--cx-font); }
+.lib-contrib-part-title { margin: 6px 0 0; color: var(--cx-ink); font: 650 16px/1.3 var(--cx-font); }
+.lib-contrib-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.lib-contrib-card { display: flex; flex-direction: column; gap: 10px; height: 100%; padding: 16px; color: var(--cx-ink); box-sizing: border-box; scroll-margin: 96px 0; }
+.lib-contrib-card:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
+.lib-contrib-card :where(h3, p) { margin: 0; }
+.lib-contrib-card h3 { font: 650 17px/1.3 var(--cx-font); overflow-wrap: anywhere; }
+.lib-contrib-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.lib-contrib-text { color: var(--cx-muted); font-size: 14.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.lib-contrib-more { font-size: 14.5px; line-height: 1.55; }
+.lib-contrib-more summary { width: fit-content; color: var(--cx-accent); font-weight: 600; cursor: pointer; }
+.lib-contrib-more summary:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; border-radius: 2px; }
+.lib-contrib-more p { margin: 8px 0 0; white-space: pre-line; overflow-wrap: anywhere; }
+.lib-contrib-link { display: inline-flex; align-items: center; gap: 6px; width: fit-content; color: var(--cx-accent); font: 600 14px/1.3 var(--cx-font); text-decoration: none; overflow-wrap: anywhere; }
+.lib-contrib-link:hover { text-decoration: underline; }
+.lib-contrib-link:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; border-radius: 2px; }
+.lib-contrib-by { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--cx-line); font-size: 13px; color: var(--cx-muted); }
+.lib-contrib-by-words { display: flex; flex: 1; flex-direction: column; min-width: 0; line-height: 1.3; }
+.lib-contrib-by-words b { color: var(--cx-ink); font-weight: 600; }
+.lib-contrib-when { flex-basis: 100%; color: var(--cx-faint); font-size: 12.5px; }
+.lib-contrib-remove { min-height: 30px; padding: 0 8px; font-size: 13px; }
+.lib-contrib-section { font-family: var(--cx-font); }
+
+@media (max-width: 620px) {
+  .cm-dialog.lib-contrib-dialog { border-width: 1px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); border-radius: var(--cx-radius-lg) var(--cx-radius-lg) 0 0; }
+  .lib-contrib-actions .cx-btn { flex: 1; }
+  .lib-contrib-bar .cx-btn { width: 100%; }
+}

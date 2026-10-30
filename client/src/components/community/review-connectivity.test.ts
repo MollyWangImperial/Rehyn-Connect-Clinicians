@@ -6,6 +6,7 @@ import { SettingsContext } from "@/components/settings-context";
 import { communityAlerts, FRIENDS_TABS, type FriendsTab } from "@/content/community-samples";
 import { blankCommunityMemory, communityHref, communityViewFromQuery, defaultCommunitySettings, viewHref, type CommunityMemory, type CommunityPlace, type SafetyTarget } from "@/lib/community-store";
 import { fastCheckReturnPath } from "@/lib/fast-check";
+import { DEMO_CLINICIAN_ID } from "@/lib/me";
 import SiteTabs from "@/components/SiteTabs";
 import Community from "@/pages/Community";
 import ProfilePanel from "@/components/ProfilePanel";
@@ -15,6 +16,7 @@ import FriendsDrawer from "./FriendsDrawer";
 import { friendsVisit } from "./friends-visit";
 import { myGroups } from "./group-model";
 import { chatById } from "./messages-model";
+import { hostedSessions } from "./weekly-sessions-model";
 import { SafetySheetSteps, type SheetStep } from "./PostMenu";
 import { SafetyPage } from "./SafetyView";
 import SettingsView from "./SettingsView";
@@ -85,6 +87,12 @@ const APP_PATHS = ["/", "/fast-check", "/library", "/community", "/care-team", "
 /** Routes with pages nested under them (the Library's sections and conditions, the Clinicians tab's pages). */
 const NESTED = ["/library/", "/clinicians/"];
 
+/** The sittings Group weekly sessions can open for the signed-in (demo) clinician, coming up or finished this week. */
+function hostedSessionIds(): string[] {
+  const { coming, finished } = hostedSessions([], DEMO_CLINICIAN_ID, Date.now());
+  return [...coming, ...finished].map(session => session.id);
+}
+
 /** Why a link would not land where it says, or null when it does. */
 function problemWith(given: string, groups: string[]): string | null {
   // "~/library" is wouter's way of saying the app's own /library from inside a nested route.
@@ -96,7 +104,11 @@ function problemWith(given: string, groups: string[]): string | null {
   if (!APP_PATHS.includes(url.pathname) && !NESTED.some(base => url.pathname.startsWith(base))) return `"${href}" is not a route in App.tsx`;
   if (url.pathname === "/community") {
     const view = communityViewFromQuery(url.search);
-    const again = viewHref(view);
+    // Group weekly sessions (the circle's address) reads `&session=<id>` itself to open one sitting
+    // (WeeklySessions.tsx), so that part is the view's, as long as it names a session the clinician hosts.
+    const session = view.space === "circle" ? url.searchParams.get("session") : null;
+    if (session !== null && !hostedSessionIds().includes(session)) return `"${href}" names a session that isn't there`;
+    const again = session !== null ? `${viewHref(view)}&session=${encodeURIComponent(session)}` : viewHref(view);
     if (again !== href) return `"${href}" has parts the community ignores (it opens ${again})`;
     if (view.space === "groups" && view.group && !groups.includes(view.group)) return `"${href}" names a group that isn't there`;
     if (view.space === "messages" && view.chat && !chatById(held.memory ?? blankCommunityMemory(), view.chat)) return `"${href}" names a conversation that isn't there`;
@@ -118,9 +130,11 @@ function deadEnds(drawn: ReturnType<typeof draw>) {
 
 /* ------------------------------------------------------------- the sweep */
 
+// The lounge and poker night are gone (their addresses open the feed); Group weekly sessions sits at the circle's address.
 const SPACES = [
-  "/community", "/community?space=lounge", "/community?space=circle", "/community?space=groups", "/community?space=groups&group=walk",
-  "/community?space=messages", "/community?space=messages&chat=david", "/community?space=messages&chat=garden",
+  "/community", "/community?space=circle", "/community?space=circle&session=stroke-prevention-qa-20261008", "/community?space=events",
+  "/community?space=groups", "/community?space=groups&group=walk",
+  "/community?space=messages", "/community?space=messages&chat=kwame", "/community?space=messages&chat=garden",
   "/community?space=start", "/community?space=settings", "/community?space=safety",
 ];
 
@@ -144,10 +158,10 @@ describe("every control in My community leads somewhere", () => {
   });
 
   it("in the drawer's changed rows: answered, cancelled, unblocked, a friend blocked, requests off", () => {
-    held.memory = memory({ answers: { joan: "accepted", liwei: "declined" }, cancelled: ["tomasz"], blocks: { gary: 0, david: Date.now() }, waves: ["joan"], settings: { ...defaultCommunitySettings(), requestsFrom: "noOne" } });
-    friendsVisit.answered("joan");
-    friendsVisit.answered("liwei");
-    friendsVisit.cancelled("tomasz", Date.now() - 2 * 86_400_000);
+    held.memory = memory({ answers: { ruth: "accepted", michael: "declined" }, cancelled: ["tomas"], blocks: { gary: 0, kwame: Date.now() }, waves: ["ruth"], settings: { ...defaultCommunitySettings(), requestsFrom: "noOne" } });
+    friendsVisit.answered("ruth");
+    friendsVisit.answered("michael");
+    friendsVisit.cancelled("tomas", Date.now() - 2 * 86_400_000);
     friendsVisit.unblocked("gary", Date.now() - 3 * 86_400_000);
     const found: string[] = [];
     for (const tab of FRIENDS_TABS) found.push(...deadEnds(draw(createElement(Community), `/community?panel=friends&tab=${tab}`)));
@@ -162,7 +176,7 @@ describe("every control in My community leads somewhere", () => {
     const panel = draw(createElement(SettingsContext.Provider, { value: noop, children: createElement(ProfilePanel) }), "/community");
     found.push(...deadEnds({ ...panel, links: [] }).map(problem => `panel: ${problem}`));
     const steps: SheetStep[] = ["menu", "reason", "details", "sent", "block", "blocked", "muted"];
-    for (const target of [{ who: "margaret", postId: "p-margaret" }, { who: "gary", postId: null }] as SafetyTarget[]) {
+    for (const target of [{ who: "hannah", postId: "p-hannah" }, { who: "gary", postId: null }] as SafetyTarget[]) {
       for (const step of steps) {
         found.push(...deadEnds(draw(createElement(SafetySheetSteps, { target, name: "Zak", titleId: "t", onClose: noop, start: { step, reason: "money", outcome: { blocked: true, postHidden: true }, blockedHere: true } }), "/community")).map(problem => `sheet ${target.who} ${step}: ${problem}`));
       }
@@ -173,7 +187,7 @@ describe("every control in My community leads somewhere", () => {
   it("on the Safety page with reports, hidden people and posts, and on Settings with its profile buttons", () => {
     held.memory = memory({
       reports: [{ id: "report-a", who: "gary", postId: "p-gary", reason: "health", note: "Same message to me.", alsoBlock: true, createdAt: Date.now() }],
-      muted: { anne: Date.now() }, hiddenPosts: { "p-tomasz": Date.now() },
+      muted: { grace: Date.now() }, hiddenPosts: { "p-tomas": Date.now() },
       settings: { ...defaultCommunitySettings(), picture: "photo", requestsFrom: "noOne" },
     });
     const found = deadEnds(draw(createElement(SafetyPage, { memory: held.memory, name: "Zak", warningSignsHref: "/fast-check?returnTo=%2F", onPersonMenu: noop }), "/community?space=safety"));
@@ -186,16 +200,17 @@ describe("every control in My community leads somewhere", () => {
 /* ------------------------------------------------------- where each goes */
 
 describe("the profile panel's rows and the overlays are wired to the right place", () => {
-  it("the page has no toolbar any more: Alerts is a row in the profile panel that opens its panel, beside Friends (Feed review, comments 1 to 7)", () => {
-    for (const path of ["/community", "/community?space=lounge", "/community?space=settings", "/community?space=safety"]) {
+  it("the page has no toolbar any more, and the profile panel has My Network, My professional events and My consultations, with no Alerts, Saved or Game (comments 1 to 7)", () => {
+    for (const path of ["/community", "/community?space=events", "/community?space=settings", "/community?space=safety"]) {
       const { buttons, links } = draw(createElement(Community), path);
       expect([...buttons, ...links].filter(item => item.props["data-cm-tool"] !== undefined)).toEqual([]);
     }
     const { buttons, links, html } = draw(createElement(SettingsContext.Provider, { value: noop, children: createElement(ProfilePanel) }), "/community");
-    const alerts = buttons.find(item => item.props["data-cm-tool"] === "alerts");
-    expect(typeof alerts?.props.onClick).toBe("function");
-    expect(alerts?.props["aria-haspopup"]).toBe("dialog");
-    expect(links.map(hrefOf)).toContain("~/community?panel=friends");
+    expect([...buttons, ...links].filter(item => item.props["data-cm-tool"] !== undefined)).toEqual([]);
+    const text = html.replace(/<[^>]+>/g, " ");
+    for (const row of ["My Network", "My professional events", "My consultations"]) expect(text).toContain(row);
+    for (const gone of ["Alerts", "Saved", "Game"]) expect(text).not.toMatch(new RegExp(`\\b${gone}\\b`));
+    expect(links.map(hrefOf)).toEqual(expect.arrayContaining(["~/community?panel=friends", "~/community?space=events", "~/clinicians/portal/consultations"]));
     expect(html).not.toContain("site-foot");
   });
 
@@ -221,8 +236,8 @@ describe("the profile panel's rows and the overlays are wired to the right place
     (buttons.find(item => item.props["aria-label"] === "Close")!.props.onClick as () => void)();
     expect(onClose).toHaveBeenCalledTimes(1);
     const opener = { tagName: "BUTTON" };
-    (buttons.find(item => item.props["aria-label"] === "More options for Margaret")!.props.onClick as (event: unknown) => void)({ currentTarget: opener });
-    expect(onPersonMenu).toHaveBeenCalledWith({ who: "margaret", postId: null }, opener);
+    (buttons.find(item => item.props["aria-label"] === "More options for Hannah Brooks")!.props.onClick as (event: unknown) => void)({ currentTarget: opener });
+    expect(onPersonMenu).toHaveBeenCalledWith({ who: "hannah", postId: null }, opener);
   });
 
   it("a post's ··· opens the sheet about that post, and the Safety page's ··· about that person or post", () => {
@@ -233,18 +248,18 @@ describe("the profile panel's rows and the overlays are wired to the right place
     for (const button of more) (button.props.onClick as (event: unknown) => void)({ currentTarget: null });
     expect(onMore.mock.calls.map(call => call[0].postId)).toEqual(more.map((_, index) => onMore.mock.calls[index][0].postId));
     expect(onMore.mock.calls.every(call => typeof call[0].postId === "string")).toBe(true);
-    expect(onMore.mock.calls.map(call => call[0].who)).toContain("margaret");
+    expect(onMore.mock.calls.map(call => call[0].who)).toContain("hannah");
 
     const onPersonMenu = vi.fn();
-    held.memory = memory({ muted: { anne: Date.now() }, hiddenPosts: { "p-tomasz": Date.now() } });
+    held.memory = memory({ muted: { grace: Date.now() }, hiddenPosts: { "p-tomas": Date.now() } });
     const page = draw(createElement(SafetyPage, { memory: held.memory, name: "Zak", warningSignsHref: "/fast-check?returnTo=%2F", onPersonMenu }), "/community?space=safety");
     for (const button of page.buttons.filter(item => String(item.props.className) === "cm-more")) (button.props.onClick as (event: unknown) => void)({ currentTarget: null });
-    expect(onPersonMenu.mock.calls.map(call => call[0])).toEqual([{ who: "anne", postId: null }, { who: "tomasz", postId: "p-tomasz" }]);
+    expect(onPersonMenu.mock.calls.map(call => call[0])).toEqual([{ who: "grace", postId: null }, { who: "tomas", postId: "p-tomas" }]);
   });
 
   it("the sheet's last step: Back to the feed closes it, See my reports closes it as it goes", () => {
     const onClose = vi.fn();
-    const drawn = draw(createElement(SafetySheetSteps, { target: { who: "margaret", postId: "p-margaret" }, name: "Zak", titleId: "t", onClose, start: { step: "sent", reason: "money", outcome: { blocked: true, postHidden: false } } }), "/community");
+    const drawn = draw(createElement(SafetySheetSteps, { target: { who: "hannah", postId: "p-hannah" }, name: "Zak", titleId: "t", onClose, start: { step: "sent", reason: "money", outcome: { blocked: true, postHidden: false } } }), "/community");
     expect(drawn.links.map(item => [hrefOf(item), item.props.onClick === onClose])).toEqual([["/community?space=safety", true]]);
     expect(drawn.buttons.find(item => labelOf(item.props) === "Back to the feed")?.props.onClick).toBe(onClose);
   });
@@ -269,15 +284,19 @@ describe("problems found in review stay fixed", () => {
 
   it("every link about one setting opens Community settings at that setting's section", () => {
     const openSection = (html: string) => html.match(/<button[^>]*class="cm-set-toggle"[^>]*aria-expanded="true"[^>]*>[\s\S]*?class="cm-set-toggle-title"[^>]*>([^<]+)</)?.[1];
+    // No clinician's post is one gentle mode covers, so the feed has no "Gentle mode settings" link; a hidden word
+    // that a post mentions brings up "Change your hidden words".
+    expect(draw(createElement(FeedView, { name: "Zak", here: 14, onMore: noop }), "/community").links.find(item => labelOf(item.props) === "Gentle mode settings")).toBeUndefined();
+    held.memory = memory({ settings: { ...defaultCommunitySettings(), hiddenWords: ["anticoagulation"] } });
     const feed = draw(createElement(FeedView, { name: "Zak", here: 14, onMore: noop }), "/community");
-    const gentle = feed.links.find(item => labelOf(item.props) === "Gentle mode settings")!;
+    held.memory = blankCommunityMemory();
     const words = feed.links.find(item => labelOf(item.props) === "Change your hidden words")!;
     const drawer = draw(createElement(Community), "/community?panel=friends").links.find(item => String(item.props.className).includes("cm-fr-foot"))!;
     const safety = draw(createElement(Community), "/community?space=safety").links.find(item => String(item.props.className).includes("cm-sa-settings"))!;
     const alerts = draw(createElement(AlertsPanel, { onClose: noop, anchor: null, over: FEED, fallbackFocus: () => null }), "/community").links.find(item => String(item.props.className).includes("cm-al-foot"))!;
     // Each address names a section; My community opens Settings → Your profile at it (the settings draw as there).
-    const opens = [gentle, words, safety, alerts].map(link => openSection(draw(createElement(SettingsView, { name: "Zak", section: sectionOf(hrefOf(link)) }), "/community").html));
-    expect(opens).toEqual(["What you see", "What you see", "What you see", "Quiet times"]);
+    const opens = [words, safety, alerts].map(link => openSection(draw(createElement(SettingsView, { name: "Zak", section: sectionOf(hrefOf(link)) }), "/community").html));
+    expect(opens).toEqual(["What you see", "What you see", "Quiet times"]);
     // The drawer's "Who can send you requests: Change" leads to Your profile, where Your privacy holds the choice.
     expect(hrefOf(drawer)).toBe("/community?space=settings&section=profile");
     expect(draw(createElement(SettingsView, { name: "Zak", section: sectionOf(hrefOf(drawer)) }), "/community").html).toContain("Who can ask to be friends");
@@ -286,42 +305,44 @@ describe("problems found in review stay fixed", () => {
   });
 
   it("an alert about a request already answered on an earlier visit leads to that person", () => {
-    held.memory = memory({ answers: { joan: "accepted" } });
+    held.memory = memory({ answers: { ruth: "accepted" } });
     const { links } = draw(createElement(AlertsPanel, { onClose: noop, anchor: null, over: FEED, fallbackFocus: () => null }), "/community");
-    const joan = hrefOf(links.find(item => String(item.props["aria-label"]).startsWith("Joan wants to be friends"))!);
-    // A new visit: nothing answered in the drawer yet. The alert says "Friends now"; the tab it opens should show Joan
-    // (her card, or her row among friends), not "All caught up" with Joan named only in Priya's "Friends with David and Joan".
-    const { html } = draw(createElement(Community), joan);
-    const drawer = html.slice(html.indexOf('role="dialog"'));
-    expect(drawer).toMatch(/<b>Joan<\/b>|You and Joan are friends now|>Joan <span>wants to be friends/);
+    const ruth = hrefOf(links.find(item => String(item.props["aria-label"]).startsWith("Ruth Calloway wants to connect"))!);
+    // A new visit: nothing answered in the drawer yet. The tab the alert opens should show Ruth among the connections,
+    // not "All caught up" with her named only in someone else's mutual connections.
+    expect(ruth).toBe("/community?panel=friends&tab=friends");
+    const { html } = draw(createElement(Community), ruth);
+    const drawer = html.slice(html.indexOf('role="dialog"')).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+    expect(drawer).toContain("Ruth Calloway Specialist cardiac rehabilitation nurse New connection");
   });
 
   it("an alert about a request declined on an earlier visit leads to the 'not now', with its Undo", () => {
-    held.memory = memory({ answers: { liwei: "declined" } });
+    held.memory = memory({ answers: { michael: "declined" } });
     const { links } = draw(createElement(AlertsPanel, { onClose: noop, anchor: null, over: FEED, fallbackFocus: () => null }), "/community");
-    const liwei = hrefOf(links.find(item => String(item.props["aria-label"]).startsWith("Li Wei wants to be friends"))!);
-    expect(liwei).toBe("/community?panel=friends");
-    const { html } = draw(createElement(Community), liwei);
+    const michael = hrefOf(links.find(item => String(item.props["aria-label"]).startsWith("Michael Chau wants to connect"))!);
+    expect(michael).toBe("/community?panel=friends");
+    const { html } = draw(createElement(Community), michael);
     const drawer = html.slice(html.indexOf('role="dialog"'));
-    expect(drawer).toContain("You chose not now for Li Wei.");
-    expect(drawer).toContain("show Li Wei&#x27;s request again");
+    expect(drawer).toContain("You chose not now for Dr Michael Chau.");
+    expect(drawer).toContain("show Dr Michael Chau&#x27;s request again");
   });
 
   it("a link to the view already showing replaces the address, so Back isn't given the same page twice", () => {
     const replaces = (links: Seen[], href: string) => links.filter(item => hrefOf(item) === href).map(item => item.props.replace === true);
     // On the page itself nothing links to the Safety page any more (the toolbar is gone); the profile panel's
-    // Friends row opens the drawer over the feed, as a new address.
+    // My Network row opens the drawer over the feed, as a new address.
     const safety = draw(createElement(Community), "/community?space=safety").links;
     expect(replaces(safety, "/community?space=safety")).not.toContain(false);
     const panel = draw(createElement(SettingsContext.Provider, { value: noop, children: createElement(ProfilePanel) }), "/community").links;
     expect(replaces(panel, "~/community?panel=friends")).toEqual([false]);
-    // The spaces' tabs are at the top of every page (SiteTabs); their links start with "~".
+    // The spaces' tabs are at the top of every page (SiteTabs); their links start with "~". There is no lounge tab.
     const feed = draw(createElement(SiteTabs), "/community").links;
+    expect(feed.map(hrefOf)).not.toContain("~/community?space=lounge");
     expect(replaces(feed, "~/community")).toEqual([true]);
-    expect(replaces(feed, "~/community?space=lounge")).toEqual([false]);
-    const lounge = draw(createElement(SiteTabs), "/community?space=lounge").links;
-    expect(replaces(lounge, "~/community?space=lounge")).toEqual([true]);
-    expect(replaces(lounge, "~/community")).toEqual([false]);
+    expect(replaces(feed, "~/community?space=circle")).toEqual([false]);
+    const sessions = draw(createElement(SiteTabs), "/community?space=circle").links;
+    expect(replaces(sessions, "~/community?space=circle")).toEqual([true]);
+    expect(replaces(sessions, "~/community")).toEqual([false]);
 
     // Alerts: the circle alert while on the circle, and Quiet time's Change while on Settings.
     const circle: CommunityPlace = { space: "circle", group: null };
@@ -333,7 +354,7 @@ describe("problems found in review stay fixed", () => {
     expect(replaces(onSettings, "/community?space=settings&section=quiet")).toEqual([true]);
 
     // "See my reports" from a sheet on the Safety page.
-    const sheet = (path: string) => draw(createElement(SafetySheetSteps, { target: { who: "margaret", postId: "p-margaret" }, name: "Zak", titleId: "t", onClose: noop, start: { step: "sent", reason: "money", outcome: { blocked: true, postHidden: false } } }), path).links;
+    const sheet = (path: string) => draw(createElement(SafetySheetSteps, { target: { who: "hannah", postId: "p-hannah" }, name: "Zak", titleId: "t", onClose: noop, start: { step: "sent", reason: "money", outcome: { blocked: true, postHidden: false } } }), path).links;
     expect(replaces(sheet("/community?space=safety"), "/community?space=safety")).toEqual([true]);
     expect(replaces(sheet("/community"), "/community?space=safety")).toEqual([false]);
   });
