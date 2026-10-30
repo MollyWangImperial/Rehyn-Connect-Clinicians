@@ -15,8 +15,10 @@
 .lib-contrib-dialog h2 { font: 650 22px/1.2 var(--cx-font); color: var(--cx-ink); }
 .lib-contrib-dialog h2:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 3px; }
 .lib-contrib-dialog-note { color: var(--cx-muted); font-size: 14px; line-height: 1.5; }
-.lib-contrib-close { flex: none; width: 36px; padding: 0; }
+.lib-contrib-close { flex: none; width: 36px; min-width: 36px; height: 36px; padding: 0; }
+.lib-contrib-close svg { flex: none; width: 18px; height: 18px; }
 .lib-contrib-form { display: flex; flex-direction: column; gap: 18px; }
+.lib-contrib-form[hidden] { display: none; }
 .lib-contrib-form fieldset { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 0; border: 0; }
 .lib-contrib-form legend { padding: 0 0 2px; color: var(--cx-muted); font: 600 12px/1.4 var(--cx-font); letter-spacing: 0.04em; text-transform: uppercase; }
 .lib-contrib-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -29,13 +31,25 @@
 .lib-contrib-field textarea { resize: vertical; }
 .lib-contrib-field :where(input, select, textarea):focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 1px; border-color: var(--cx-accent); }
 .lib-contrib-field [aria-invalid="true"] { border-color: var(--cx-danger); }
-.lib-contrib-hint { color: var(--cx-muted); font-size: 13px; line-height: 1.4; }
 .lib-contrib-error { color: var(--cx-danger); font: 600 13px/1.4 var(--cx-font); }
 .lib-contrib-summary-error, .lib-contrib-save-error { padding: 10px 12px; border: 1px solid var(--cx-danger); border-radius: var(--cx-radius); background: #FBEDEA; color: var(--cx-danger); font: 600 14px/1.45 var(--cx-font); }
 .lib-contrib-save-error:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
-.lib-contrib-as { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--cx-radius); background: var(--cx-subtle); color: var(--cx-muted); font-size: 13.5px; line-height: 1.4; }
-.lib-contrib-as b { color: var(--cx-ink); }
 .lib-contrib-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* The review before saving: where it goes, then the card as readers will see it. */
+.lib-contrib-review { display: flex; flex-direction: column; gap: 16px; }
+.lib-contrib-dialog-head h2:focus { outline: none; }
+.lib-contrib-dialog-head h2:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 3px; }
+.lib-contrib-where { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-line); }
+.lib-contrib-where > div { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: var(--cx-surface); }
+.lib-contrib-where dt { color: var(--cx-muted); font: 600 12px/1.4 var(--cx-font); }
+.lib-contrib-where dd { margin: 0; color: var(--cx-ink); font: 600 14px/1.4 var(--cx-font); overflow-wrap: anywhere; }
+.lib-contrib-review .lib-contrib-list { grid-template-columns: minmax(0, 1fr); }
+.lib-contrib-review .cx-btn[disabled] { cursor: progress; }
+@media (max-width: 560px) {
+  .lib-contrib-where { grid-template-columns: minmax(0, 1fr); }
+  .lib-contrib-actions .cx-btn { flex: 1 1 100%; }
+}
 
 /* The contributions on a condition's page, at the end of the part they were added to. */
 .lib-contrib-part { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; font-family: var(--cx-font); }
@@ -64,5 +78,5 @@
 @media (max-width: 620px) {
   .cm-dialog.lib-contrib-dialog { border-width: 1px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); border-radius: var(--cx-radius-lg) var(--cx-radius-lg) 0 0; }
   .lib-contrib-actions .cx-btn { flex: 1; }
-  .lib-contrib-bar .cx-btn { width: 100%; }
+  .lib-contrib-bar > .cx-btn { width: 100%; }
 }

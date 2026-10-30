@@ -15,6 +15,7 @@ import {
   EMPTY_DRAFT,
   isWebAddress,
   useContributions,
+  validateContribution,
   type ContributionDraft,
   type ContributionErrors,
   type ContributionField,
@@ -26,9 +27,10 @@ import "@/pages/community.css";
 import "@/pages/library-contributions.css";
 
 // "Add to library" (browser comment 15): a clinician places a piece of content on a condition's page, choosing the
-// Library group, the condition and the part of the page (the category) it goes under. It is saved with who added it
-// and when (lib/library-contributions.ts) and shown on that page, in that part, labelled as a clinician contribution.
-// In this preview it is kept on this device only: there is no review or publishing step yet, and the UI says so.
+// Library group, the condition and the part of the page (the category) it goes under. "Add to library" checks the form
+// and then shows it as readers will see it, with who added it and when, for the clinician to confirm; only "Confirm and
+// add" saves it (lib/library-contributions.ts). It is then shown on that page, in that part, labelled as a clinician
+// contribution. In this preview it is kept on this device, which the card itself says.
 
 /** What each part of a condition page is for, as the form explains it (the page's own lines, shortened). */
 const CATEGORY_HINT: Record<ContentType, string> = {
@@ -37,8 +39,6 @@ const CATEGORY_HINT: Record<ContentType, string> = {
   liveWell: "practical support for everyday life",
   watch: "films, talks and audio",
 };
-
-const DEVICE_NOTE = "In this preview it's kept on this device only. There's no review or publishing step yet, so patients and other clinicians won't see it.";
 
 /** The contribution the page should bring into view once it is on screen (set when the form saves). */
 let justAdded: string | null = null;
@@ -68,7 +68,14 @@ function AddToLibraryForm({ here, onClose }: { here?: ConditionPlace; onClose: (
   const [errors, setErrors] = useState<ContributionErrors>({});
   const [saveError, setSaveError] = useState("");
   const [tried, setTried] = useState(false);
+  // Editing, or reviewing the checked contribution before it is saved (the draft stays as typed either way).
+  const [review, setReview] = useState<LibraryContribution | null>(null);
+  const saving = useRef(false);
+  const [busy, setBusy] = useState(false);
   const saveRef = useRef<HTMLParagraphElement>(null);
+  const reviewHeading = useRef<HTMLHeadingElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
+  const author = { clinicianId: me.clinician.id, name: me.name, title: me.title, photo: me.photo, initials: me.initials };
 
   const group = librarySections.flatMap(section => section.groups).find(entry => entry.id === draft.groupId);
   const condition = findCondition(draft.groupId, draft.conditionId)?.condition;
@@ -84,20 +91,54 @@ function AddToLibraryForm({ here, onClose }: { here?: ConditionPlace; onClose: (
   };
 
   const ORDER: ContributionField[] = ["groupId", "conditionId", "category", "kind", "title", "summary", "body", "url"];
+  // "Add to library": check the form; a valid one goes to the review, an invalid one stays here with its problems.
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setTried(true);
-    const author = { clinicianId: me.clinician.id, name: me.name, title: me.title, photo: me.photo, initials: me.initials };
-    const result = contributionStore.add(draft, author);
-    if ("errors" in result) {
-      setErrors(result.errors);
-      const firstWrong = ORDER.find(field => result.errors[field]);
+    const checked = validateContribution(draft);
+    if (!checked.ok) {
+      setErrors(checked.errors);
+      const firstWrong = ORDER.find(field => checked.errors[field]);
       if (firstWrong) document.getElementById(id(firstWrong))?.focus();
       return;
     }
+    setSaveError("");
+    moved.current = "review";
+    setReview({ id: "review", ...checked.value, author, createdAt: Date.now() });
+  };
+  const backToEdit = () => {
+    moved.current = "edit";
+    setReview(null);
+    setSaveError("");
+  };
+  // Moving between editing and the review takes the keyboard focus along: to the review's heading, or back to "Add to library".
+  const moved = useRef<"review" | "edit" | null>(null);
+  useEffect(() => {
+    if (moved.current === "review") reviewHeading.current?.focus();
+    else if (moved.current === "edit") addButton.current?.focus();
+    moved.current = null;
+  }, [review]);
+  useEffect(() => { if (saveError && review) saveRef.current?.focus(); }, [saveError, review]);
+
+  // "Confirm and add": the only step that saves, and only once, however often it is pressed. After a successful save
+  // the lock stays on while the dialog closes; a failed one releases it so the clinician can try again.
+  const confirm = () => {
+    if (saving.current) return;
+    saving.current = true;
+    setBusy(true);
+    const result = contributionStore.add(draft, author);
+    if ("errors" in result) {
+      saving.current = false;
+      setBusy(false);
+      moved.current = "edit";
+      setReview(null);
+      setErrors(result.errors);
+      return;
+    }
     if (!result.ok) {
+      saving.current = false;
+      setBusy(false);
       setSaveError(result.error);
-      saveRef.current?.focus();
       return;
     }
     // Saved: close, and open the chosen page at the new piece (or bring it into view if this is that page).
@@ -109,7 +150,7 @@ function AddToLibraryForm({ here, onClose }: { here?: ConditionPlace; onClose: (
   };
 
   const count = Object.values(errors).filter(Boolean).length;
-  const describe = (field: ContributionField, hint?: string) => [hint, errors[field] ? id(`${field}-error`) : null].filter(Boolean).join(" ") || undefined;
+  const describe = (field: ContributionField) => (errors[field] ? id(`${field}-error`) : undefined);
   const fieldError = (field: ContributionField) => errors[field] ? <p id={id(`${field}-error`)} className="lib-contrib-error">{errors[field]}</p> : null;
   const counter = (value: string, max: number) => <span className={`lib-contrib-count${value.trim().length > max ? " is-over" : ""}`}>{value.trim().length} / {max}</span>;
 
@@ -117,15 +158,18 @@ function AddToLibraryForm({ here, onClose }: { here?: ConditionPlace; onClose: (
     <div className="lib-contrib-dialog-head">
       <div>
         <p className="cx-kicker">Clinician contribution</p>
-        <h2 id={id("heading")}>Add to the Library</h2>
-        <p className="lib-contrib-dialog-note">Choose where it goes, then add the content. {DEVICE_NOTE}</p>
+        {review
+          ? <><h2 id={id("heading")} ref={reviewHeading} tabIndex={-1}>Review your contribution</h2>
+            <p className="lib-contrib-dialog-note">This is how your contribution will appear in the Library.</p></>
+          : <><h2 id={id("heading")}>Add to the Library</h2>
+            <p className="lib-contrib-dialog-note">Share your expertise and help patients discover you through the Library.</p></>}
       </div>
       <button type="button" className="cx-btn cx-btn-quiet lib-contrib-close" onClick={onClose} aria-label="Close without adding">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     </div>
 
-    <form className="lib-contrib-form" onSubmit={submit} noValidate>
+    <form className="lib-contrib-form" onSubmit={submit} noValidate hidden={review !== null}>
       {tried && count > 0 && <p className="lib-contrib-summary-error" role="alert">{count === 1 ? "One thing needs fixing" : `${count} things need fixing`} before this can be added. Each one is marked below.</p>}
 
       <fieldset>
@@ -142,20 +186,18 @@ function AddToLibraryForm({ here, onClose }: { here?: ConditionPlace; onClose: (
         </div>
         <div className="lib-contrib-field">
           <label htmlFor={id("conditionId")}>Medical condition <span className="lib-contrib-req">required</span></label>
-          <select id={id("conditionId")} value={draft.conditionId} onChange={event => set("conditionId", event.target.value)} aria-invalid={Boolean(errors.conditionId)} aria-describedby={describe("conditionId", group ? undefined : id("conditionId-hint"))} required>
+          <select id={id("conditionId")} value={draft.conditionId} onChange={event => set("conditionId", event.target.value)} aria-invalid={Boolean(errors.conditionId)} aria-describedby={describe("conditionId")} required>
             <option value="">{group ? "Choose a condition" : "Choose a group first"}</option>
             {group?.conditions.map(entry => <option key={entry.id} value={entry.id}>{entry.title}</option>)}
           </select>
-          {!group && <p id={id("conditionId-hint")} className="lib-contrib-hint">The conditions listed are the ones in the chosen group.</p>}
           {fieldError("conditionId")}
         </div>
         <div className="lib-contrib-field">
           <label htmlFor={id("category")}>Category <span className="lib-contrib-req">required</span></label>
-          <select id={id("category")} value={draft.category} onChange={event => set("category", event.target.value)} aria-invalid={Boolean(errors.category)} aria-describedby={describe("category", id("category-hint"))} required data-autofocus={here ? true : undefined}>
+          <select id={id("category")} value={draft.category} onChange={event => set("category", event.target.value)} aria-invalid={Boolean(errors.category)} aria-describedby={describe("category")} required data-autofocus={here ? true : undefined}>
             <option value="">Choose a category</option>
             {CONTENT_TYPES.map(type => <option key={type} value={type}>{contentTitle(type, condition)}: {CATEGORY_HINT[type]}</option>)}
           </select>
-          <p id={id("category-hint")} className="lib-contrib-hint">The part of the condition's page it is listed under.</p>
           {fieldError("category")}
         </div>
       </fieldset>
@@ -176,34 +218,41 @@ function AddToLibraryForm({ here, onClose }: { here?: ConditionPlace; onClose: (
         </div>
         <div className="lib-contrib-field">
           <div className="lib-contrib-label-row"><label htmlFor={id("summary")}>Summary <span className="lib-contrib-req">required</span></label>{counter(draft.summary, CONTRIBUTION_LIMITS.summary.max)}</div>
-          <textarea id={id("summary")} rows={3} value={draft.summary} onChange={event => set("summary", event.target.value)} aria-invalid={Boolean(errors.summary)} aria-describedby={describe("summary", id("summary-hint"))} required />
-          <p id={id("summary-hint")} className="lib-contrib-hint">One or two plain sentences, shown on the card.</p>
+          <textarea id={id("summary")} rows={3} value={draft.summary} onChange={event => set("summary", event.target.value)} aria-invalid={Boolean(errors.summary)} aria-describedby={describe("summary")} required />
           {fieldError("summary")}
         </div>
         <div className="lib-contrib-field">
           <div className="lib-contrib-label-row"><label htmlFor={id("body")}>Full text <span className="lib-contrib-opt">optional</span></label>{counter(draft.body, CONTRIBUTION_LIMITS.body.max)}</div>
-          <textarea id={id("body")} rows={6} value={draft.body} onChange={event => set("body", event.target.value)} aria-invalid={Boolean(errors.body)} aria-describedby={describe("body", id("body-hint"))} />
-          <p id={id("body-hint")} className="lib-contrib-hint">Readers open it from the card. Leave a blank line between paragraphs.</p>
+          <textarea id={id("body")} rows={6} value={draft.body} onChange={event => set("body", event.target.value)} aria-invalid={Boolean(errors.body)} aria-describedby={describe("body")} />
           {fieldError("body")}
         </div>
         <div className="lib-contrib-field">
           <label htmlFor={id("url")}>Link <span className="lib-contrib-opt">optional</span></label>
-          <input id={id("url")} type="url" inputMode="url" placeholder="https://" value={draft.url} onChange={event => set("url", event.target.value)} aria-invalid={Boolean(errors.url)} aria-describedby={describe("url", id("url-hint"))} autoComplete="off" />
-          <p id={id("url-hint")} className="lib-contrib-hint">A trusted page, film or leaflet elsewhere. It opens in a new tab.</p>
+          <input id={id("url")} type="url" inputMode="url" placeholder="https://" value={draft.url} onChange={event => set("url", event.target.value)} aria-invalid={Boolean(errors.url)} aria-describedby={describe("url")} autoComplete="off" />
           {fieldError("url")}
         </div>
       </fieldset>
 
-      <div className="lib-contrib-as">
-        <Avatar author={me} size={32} />
-        <span>Shown as added by <b>{me.name}</b>, {me.title}{me.demo ? " (example profile)" : ""}, with today's date.</span>
-      </div>
-      {saveError && <p ref={saveRef} className="lib-contrib-save-error" role="alert" tabIndex={-1}>{saveError}</p>}
       <div className="lib-contrib-actions">
         <button type="button" className="cx-btn cx-btn-quiet" onClick={onClose}>Cancel</button>
-        <button type="submit" className="cx-btn cx-btn-primary">Add to library</button>
+        <button ref={addButton} type="submit" className="cx-btn cx-btn-primary">Add to library</button>
       </div>
     </form>
+
+    {/* The review: where it goes, and the card as readers will see it, with who added it and the date it will show. */}
+    {review && <section className="lib-contrib-review" aria-labelledby={id("heading")}>
+      <dl className="lib-contrib-where">
+        <div><dt>Group</dt><dd>{group?.title}</dd></div>
+        <div><dt>Medical condition</dt><dd>{condition?.title}</dd></div>
+        <div><dt>Category</dt><dd>{contentTitle(review.category, condition)}</dd></div>
+      </dl>
+      <ul className="lib-contrib-list" role="list"><ContributionCard item={review} own={false} preview /></ul>
+      {saveError && <p ref={saveRef} className="lib-contrib-save-error" role="alert" tabIndex={-1}>{saveError}</p>}
+      <div className="lib-contrib-actions">
+        <button type="button" className="cx-btn" onClick={backToEdit} disabled={busy}>Back to edit</button>
+        <button type="button" className="cx-btn cx-btn-primary" onClick={confirm} disabled={busy} aria-disabled={busy || undefined}>{busy ? "Adding…" : "Confirm and add"}</button>
+      </div>
+    </section>}
   </CommunityDialog></div>;
 }
 
@@ -215,10 +264,10 @@ function Avatar({ author, size }: { author: { name: string; photo: string | null
 }
 
 /** One contribution on a condition's page, labelled with who added it and when. */
-function ContributionCard({ item, own }: { item: LibraryContribution; own: boolean }) {
+function ContributionCard({ item, own, preview = false }: { item: LibraryContribution; own: boolean; preview?: boolean }) {
   const ref = useRef<HTMLElement>(null);
   const [error, setError] = useState("");
-  const headingId = `contribution-${item.id}-title`;
+  const headingId = preview ? "contribution-review-title" : `contribution-${item.id}-title`;
   useEffect(() => {
     if (justAdded !== item.id || !ref.current) return;
     justAdded = null;
@@ -229,7 +278,7 @@ function ContributionCard({ item, own }: { item: LibraryContribution; own: boole
   const host = link ? new URL(link).hostname.replace(/^www\./, "") : "";
   const remove = () => setError(contributionStore.remove(item.id) ?? "");
   return <li>
-    <article ref={ref} id={`contribution-${item.id}`} className="cx-card lib-contrib-card" aria-labelledby={headingId} tabIndex={-1}>
+    <article ref={ref} id={preview ? undefined : `contribution-${item.id}`} className="cx-card lib-contrib-card" aria-labelledby={headingId} tabIndex={preview ? undefined : -1}>
       <div className="lib-contrib-tags"><span className="cx-pill is-accent">Clinician contribution</span><span className="cx-pill">{kindLabel(item.kind)}</span></div>
       <h3 id={headingId}>{item.title}</h3>
       <p className="lib-contrib-text">{item.summary}</p>
