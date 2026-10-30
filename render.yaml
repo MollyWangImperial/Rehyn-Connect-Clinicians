@@ -11,12 +11,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # The lounge's automatic photo check (server/lounge-photo-check.ts). Without it every photo is held for the care team.
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      # Read aloud in Alira's voice (Library, My Time). Without it the device's own voice reads.
-      - key: ELEVENLABS_API_KEY
-        sync: false
+      # The clinician edition runs without the Anthropic and ElevenLabs keys: read aloud uses the device's own voice.
       # A Slack incoming webhook: the Rehyn team is told there when an urgent consultation request has had no clinician
       # answer in 5 minutes (server/urgent-alert.ts). Without it the alert goes to the server log only.
       - key: SLACK_WEBHOOK_URL
