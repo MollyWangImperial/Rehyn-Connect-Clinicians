@@ -39,8 +39,9 @@ function SessionRow({ session, now, selected, questions, onPick }: { session: Gr
           <span>{start.toLocaleDateString("en-GB", { month: "short" })}</span>
         </span>
         <span className="ws-row-main">
-          {/* The date is in the block on the left (hidden from screen readers), so it is said here in full for them. */}
-          <span className="ws-row-top"><StatusPill status={status} /><span><span className="cm-sr">{start.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}, </span>{timeRangeText(session)}</span></span>
+          {/* The date is in the block on the left (hidden from screen readers), so it is said here in full for them. The
+              list is headed "Coming up", so only "Opens soon" and "Live now" get a label. */}
+          <span className="ws-row-top">{status !== "upcoming" && <StatusPill status={status} />}<span><span className="cm-sr">{start.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}, </span>{timeRangeText(session)}</span></span>
           <b className="ws-row-title">{session.title}</b>
         </span>
         <span className="ws-row-q"><MessageSquare size={14} aria-hidden="true" />{countText(questions, "question", "questions")}</span>
