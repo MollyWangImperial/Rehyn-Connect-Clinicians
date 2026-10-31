@@ -64,8 +64,6 @@ export default function ColleagueProfile({ clinician }: { clinician: Clinician }
                   </p>
                   <div className="cn-pills">
                     <span className={`cx-pill ${pending ? "" : "is-live"}`}><ShieldCheck size={13} aria-hidden="true" />{registerText(clinician)}</span>
-                    {!clinician.own && <span className="cx-pill" title="An example clinician while the network is being set up">Demo profile</span>}
-                    {mine && <span className="cx-pill is-accent">You</span>}
                   </div>
                   {mine ? (
                     <p className="cn-mutual"><Link href={`~${friendsHref("friends")}`} className="cn-link">{connections.length} {connections.length === 1 ? "connection" : "connections"}</Link>

@@ -54,7 +54,7 @@ export default function SiteTabs(_: { here?: number }) {
       <Link {...space("feed")}><span className="site-tab-icon"><HomeIcon size={20} /></span><span>Feed</span></Link>
       <Link {...tab("library", "/library")}><span className="site-tab-icon"><BookOpen size={20} /></span><span>Library</span></Link>
       <Link {...tab("clinicians", "/clinicians")}><span className="site-tab-icon"><Stethoscope size={20} /></span><span>Clinicians</span></Link>
-      <Link {...space("circle")}><span className="site-tab-icon"><CalendarClock size={20} /></span><span>Group weekly sessions</span></Link>
+      <Link {...space("circle")}><span className="site-tab-icon"><CalendarClock size={20} /></span><span>Sessions</span></Link>
       <Link {...space("groups")}><span className="site-tab-icon"><UsersRound size={20} />{current !== "groups" && <Count count={unreadCount(memory)} what="unread" />}</span><span>Groups</span></Link>
       <Link {...space("messages")}><span className="site-tab-icon"><MessageCircle size={20} /><Count count={unreadMessages(memory)} what="unread" /></span><span>Messages</span></Link>
     </nav>

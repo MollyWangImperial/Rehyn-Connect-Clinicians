@@ -19,7 +19,6 @@ export default function MessageComposer({ label, placeholder, onSend, suggestion
   const [problem, setProblem] = useState("");
   const field = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
-  const hintId = useId();
   const suggestionsId = useId();
 
   const submit = () => {
@@ -58,14 +57,13 @@ export default function MessageComposer({ label, placeholder, onSend, suggestion
         <label className="cm-dm-field">
           <span className="cm-sr">{label}</span>
           <textarea ref={field} rows={compact ? 1 : 2} value={text} maxLength={1000} placeholder={placeholder} autoComplete="off"
-            aria-describedby={compact ? undefined : hintId} onChange={event => { setText(event.target.value); setProblem(""); }} onKeyDown={onKeyDown} />
+            onChange={event => { setText(event.target.value); setProblem(""); }} onKeyDown={onKeyDown} />
         </label>
         <div className="cm-dm-tools">
           {!compact && (
             <>
               <button type="button" className="cm-dm-icon" aria-label="Attach an image" onClick={() => picker.current?.click()}><PhotoIcon size={18} /></button>
               <input ref={picker} className="cm-sr" type="file" accept="image/jpeg,image/png,image/webp" tabIndex={-1} aria-hidden="true" onChange={choose} />
-              <span id={hintId} className="cm-dm-hint">Enter to send · Shift+Enter for a new line</span>
             </>
           )}
           <button type="submit" className="cx-btn cx-btn-primary cm-dm-send">Send</button>

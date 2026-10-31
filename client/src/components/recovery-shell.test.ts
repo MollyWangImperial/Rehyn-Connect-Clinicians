@@ -33,7 +33,7 @@ describe("the shell: tabs at the top right, your panel on the left", () => {
       expect(tabHrefs).toEqual([
         "/community", "/library", "/clinicians", "/community?space=circle", "/community?space=groups", "/community?space=messages",
       ]);
-      for (const label of ["Feed", "Library", "Clinicians", "Group weekly sessions", "Groups", "Messages"]) expect(text, label).toContain(label);
+      for (const label of ["Feed", "Library", "Clinicians", "Sessions", "Groups", "Messages"]) expect(text, label).toContain(label);
       for (const gone of ["Lounge", "Poker", "Sunday circle"]) expect(text, gone).not.toContain(gone);
       expect(hrefs.some(href => href.includes("space=lounge") || href.includes("space=poker"))).toBe(false);
       // The brand says which edition this is.

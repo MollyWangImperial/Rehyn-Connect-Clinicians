@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
-import { Building2, Check, Clock, MessageSquare, UserPlus } from "lucide-react";
+import { Building2, Clock, MessageSquare, UserPlus } from "lucide-react";
 import { clinicianGroups, professionalTitle, type Clinician, type GroupPlace } from "@/content/clinicians";
 import { incomingRequests, people, personOfClinician, sampleGroups, type IncomingRequestId, type PersonId } from "@/content/community-samples";
 import { canSee, communityStore, friendList, friendsHref, messagesHref, relationship, useCommunity, type CommunityMemory, type Relationship } from "@/lib/community-store";
@@ -110,12 +110,8 @@ export function ConnectControls({ clinician, me, primary = false }: { clinician:
   } else if (status === "blocked") {
     body = <><span className="cx-pill">Blocked</span><Link href={`~${friendsHref("blocked")}`} className="cn-link">Manage in My network</Link></>;
   } else if (status === "friend") {
-    body = (
-      <>
-        <span className="cn-state is-connected"><Check size={16} aria-hidden="true" />Connected<span className="cl-sr"> with {name}</span></span>
-        {who && <Link href={`~${messagesHref(who)}`} className="cx-btn cn-btn-outline"><MessageSquare size={16} aria-hidden="true" />Message<span className="cl-sr"> {name}</span></Link>}
-      </>
-    );
+    // A connection shows only Message: being able to message them says you are connected (screen readers hear it too).
+    body = who && <Link href={`~${messagesHref(who)}`} className="cx-btn cn-btn-outline"><MessageSquare size={16} aria-hidden="true" />Message<span className="cl-sr"> {name}, a connection of yours</span></Link>;
   } else if (status === "sent") {
     body = (
       <>

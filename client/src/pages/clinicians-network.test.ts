@@ -58,7 +58,9 @@ describe("the directory of colleagues", () => {
     expect(shown.filter(state => state === "sent")).toHaveLength(1);
     expect(shown.filter(state => state === "incoming")).toHaveLength(2);
     expect(shown.filter(state => state === "none")).toHaveLength(CLINICIANS.length - 1 - 7);
-    expect(text).toContain("Connected with Dr Kwame Mensah");
+    // A connection shows only Message (no "Connected" label); screen readers hear that they are a connection.
+    expect(text).toContain("Message Dr Kwame Mensah, a connection of yours");
+    expect(html).not.toContain("cn-state is-connected");
     expect(text).toContain("your invitation to Dr Tomás Leal is waiting for an answer");
     expect(text).toContain("Accept Ruth Calloway's invitation");
     expect(text).toContain("Connect with Sophie Adair");

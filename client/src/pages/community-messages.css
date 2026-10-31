@@ -142,7 +142,6 @@
 .cm-dm-field textarea:focus { outline: none; }
 .cm-dm-field textarea::placeholder { color: var(--cx-faint); opacity: 1; }
 .cm-dm-tools { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-top: 1px solid var(--cx-line); }
-.cm-dm-hint { margin-right: auto; color: var(--cx-faint); font-size: 12px; }
 .cm-dm-send { min-height: 32px; margin-left: auto; padding: 0 16px; font-size: 13.5px; }
 .cm-dm-attached { display: flex; align-items: flex-start; gap: 6px; padding: 8px 8px 0; }
 .cm-dm-attached img { display: block; height: 64px; max-width: 120px; border: 1px solid var(--cx-line); border-radius: 4px; object-fit: cover; }
@@ -198,7 +197,6 @@
   .cm-dm-log { padding: 6px 12px 10px; }
   .cm-dm-foot { padding: 8px 12px 12px; }
   .cm-dm-quick { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-  .cm-dm-hint { display: none; }
   .cm-dm-list-head, .cm-dm-tools-row { padding-left: 12px; padding-right: 12px; }
   .cm-dm-row { padding: 12px; }
   .cm-dm-new { margin: 0 12px 12px; }

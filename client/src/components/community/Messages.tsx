@@ -146,7 +146,9 @@ function ChatRow({ chat, on }: { chat: Chat; on: boolean }) {
         {chat.kind === "direct" ? <OnlineFace who={chat.id} size={48} online={chat.online} /> : <Cover cover={chat.group.cover} className="cm-dm-cover" />}
         <span className="cm-dm-row-text">
           <span className="cm-dm-row-top"><b>{chat.name}</b><span className="cm-dm-when">{shortWhen(chat.lastAt)}</span></span>
-          <span className="cm-dm-row-sub">{chat.kind === "direct" ? chat.title : `Group · ${chat.group.members} members`}</span>
+          {/* A colleague's row is their name, time and last message (their title is in the thread and profile panel);
+              a group's row also says it is a group. */}
+          {chat.kind === "group" && <span className="cm-dm-row-sub">{`Group · ${chat.group.members} members`}</span>}
           <span className="cm-dm-row-bottom">
             <span className="cm-dm-snippet">{chat.snippet}</span>
             {unread && <span className="cm-dm-badge" aria-hidden="true">{chat.unread}</span>}
@@ -220,13 +222,14 @@ function PersonPanel({ chat, onPersonMenu }: { chat: DirectChat; onPersonMenu: O
         <OnlineFace who={who} size={72} online={chat.online} />
         <h3 id={titleId} className="cm-dm-side-name">{chat.name}</h3>
         <p className="cm-dm-side-title">{profile.title}</p>
-        {profile.workplace && <p className="cm-dm-side-line">{profile.workplace}</p>}
-        <p className="cm-dm-side-state">
-          {chat.connection === "Connect"
-            ? <Link className="cx-pill is-accent cm-dm-connect" href={profile.profileHref}>Connect<span className="cm-sr">{` with ${chat.name}`}</span></Link>
-            : <span className={`cx-pill ${chat.connection === "Connected" ? "is-accent" : ""}`}>{chat.connection}</span>}
-          {chat.status && <span>{chat.status}</span>}
-        </p>
+        {/* Only someone you aren't connected with yet gets a line here: Connect, or your request still pending. */}
+        {chat.connection !== "Connected" && (
+          <p className="cm-dm-side-state">
+            {chat.connection === "Connect"
+              ? <Link className="cx-pill is-accent cm-dm-connect" href={profile.profileHref}>Connect<span className="cm-sr">{` with ${chat.name}`}</span></Link>
+              : <span className="cx-pill">{chat.connection}</span>}
+          </p>
+        )}
         <Link className="cx-btn cm-dm-side-cta" href={profile.profileHref}>View profile</Link>
       </div>
       <section className="cm-dm-section" aria-label={`About ${chat.name}`}>

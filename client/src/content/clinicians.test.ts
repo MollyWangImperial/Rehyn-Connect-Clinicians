@@ -161,7 +161,7 @@ describe("the Clinicians tab", () => {
     expect(sessions.html).toBe("");
     const { html, text } = draw("/clinicians");
     expect(html).toContain('href="/community?space=circle"');
-    expect(text).toContain("Group weekly sessions");
+    expect(text).toContain("Sessions");
     expect(html).not.toContain('class="cl-session"');
   });
 
