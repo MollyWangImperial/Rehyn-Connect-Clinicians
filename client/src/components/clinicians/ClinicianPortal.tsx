@@ -1,19 +1,20 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, Route, Switch, useLocation } from "wouter";
-import { BellRing, CalendarDays, CreditCard, House, Inbox, UserRound, Users, Video, X } from "lucide-react";
+import { Link, Redirect, Route, Switch, useLocation } from "wouter";
+import { BellRing, CalendarDays, CreditCard, Inbox, UserRound, Users, Video, X } from "lucide-react";
 import { alertable, type Clinician } from "@/content/clinicians";
 import { updateClinician, useClinicians, useOwnClinician, useRole } from "@/lib/clinician-portal";
 import { URGENT_WAIT_MS, answer, setPortalClinician, updateConsultation, useConsultations, usePortalClinician, type Consultation } from "@/lib/consultations";
 import { meId as signedInId } from "@/lib/me";
 import { PreviewNote } from "./parts";
-import { PortalConsultations, PortalEarnings, PortalRequests, PortalSessions, PortalToday } from "./portal/pages";
+import { PortalConsultations, PortalEarnings, PortalRequests, PortalSessions } from "./portal/pages";
 import PortalSchedule from "./portal/Schedule";
 import PortalProfile from "./portal/ProfileEditor";
 import "./portal/portal.css";
 import "./portal/portal-clinician.css";
 
-// The clinician portal (/clinicians/portal), from the design canvas "Rehyn Clinician Portal": Today, Requests,
-// Schedule, Consultations, Group sessions, Earnings and Profile & pricing, with urgent requests popping up on every page.
+// The clinician portal (/clinicians/portal), from the design canvas "Rehyn Clinician Portal": Requests, Schedule,
+// Consultations, Group sessions, Earnings and Profile & pricing, with urgent requests popping up on every page. It opens
+// on Requests (there is no Today page in Rehyn Connect for clinicians).
 // A clinician who joined on this device sees their own; anyone can try it as one of the example clinicians. It reads
 // the same consultations as the patient's side on this device (lib/consultations.ts).
 
@@ -25,7 +26,6 @@ export function useNow(every = 5000) {
 }
 
 const NAV: { href: string; label: string; icon: ReactNode }[] = [
-  { href: "/", label: "Today", icon: <House size={18} aria-hidden="true" /> },
   { href: "/requests", label: "Requests", icon: <Inbox size={18} aria-hidden="true" /> },
   { href: "/schedule", label: "Schedule", icon: <CalendarDays size={18} aria-hidden="true" /> },
   { href: "/consultations", label: "Consultations", icon: <Video size={18} aria-hidden="true" /> },
@@ -97,7 +97,7 @@ function Shell({ me, everyone, ownId }: { me: Clinician; everyone: Clinician[]; 
   const now = useNow(1000);
   const list = useConsultations();
   const waiting = list.filter(item => item.clinicianId === me.id && item.status === "requested").length;
-  const here = (href: string) => (href === "/" ? location === "/" || location === "" : location.startsWith(href));
+  const here = (href: string) => location.startsWith(href);
   return (
     <div className="pt-portal">
       <nav className="pt-side" aria-label="Clinician portal">
@@ -119,14 +119,14 @@ function Shell({ me, everyone, ownId }: { me: Clinician; everyone: Clinician[]; 
       <main className="pt-main">
         <UrgentAlert me={me} list={list} now={now} />
         <Switch>
-          <Route path="/"><PortalToday me={me} now={now} /></Route>
+          <Route path="/"><Redirect to="/requests" replace /></Route>
           <Route path="/requests"><PortalRequests me={me} now={now} /></Route>
           <Route path="/schedule"><PortalSchedule me={me} /></Route>
           <Route path="/consultations"><PortalConsultations me={me} /></Route>
           <Route path="/sessions"><PortalSessions me={me} /></Route>
           <Route path="/earnings"><PortalEarnings me={me} /></Route>
           <Route path="/profile"><PortalProfile key={me.id} me={me} /></Route>
-          <Route><PortalToday me={me} now={now} /></Route>
+          <Route><Redirect to="/requests" replace /></Route>
         </Switch>
       </main>
     </div>

@@ -283,7 +283,6 @@ export function PortalConsultations({ me }: { me: Clinician }) {
       {examples.length > 0 && (
         <section className="pt-section" aria-labelledby="pt-examples">
           <h2 className="cl-h2" id="pt-examples">Example appointments (preview)</h2>
-          <p className="cl-small">These show the demo profile how booked consultations look. They are not real patients: patients book in the separate patient app, which isn't linked to this preview yet.</p>
           {examples.map(item => (
             <article key={item.id} id={`c-${item.id}`} className="pt-card pt-row">
               <div className="pt-row-text">

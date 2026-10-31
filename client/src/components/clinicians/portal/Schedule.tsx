@@ -128,7 +128,7 @@ export default function PortalSchedule({ me }: { me: Clinician }) {
 
         <div className="pt-stack">
           <section className="pt-card" aria-labelledby="pt-usual">
-            <h2 className="cl-h2" id="pt-usual">Hours I'm available each week</h2>
+            <h2 className="cl-h2" id="pt-usual">Weekly hours</h2>
             {!editing ? <>
               <dl className="pt-week-summary">
                 {summary.map(row => (
