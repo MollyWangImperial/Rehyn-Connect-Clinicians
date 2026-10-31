@@ -352,7 +352,6 @@ export function PortalSessions({ me }: { me: Clinician }) {
               <div key={session.id} className="pt-session">
                 <SessionCard session={session} now={now} host />
                 <div className="pt-session-extra">
-                  <p className="cl-small">{places.includes(session.id) ? "1 place saved on this device" : "No places saved on this device yet"} · {session.spaces} places in all{session.weekly ? " · repeats weekly" : ""}</p>
                   {questions.length > 0 && <div className="pt-asked"><p className="cl-label">Sent in advance · names hidden</p>{questions.map((question, index) => <p key={index}>“{question}”</p>)}</div>}
                   {!session.id.startsWith("s-") ? null : <button type="button" className="cl-clear" onClick={() => removeSession(session.id.replace(/-w\d+$/, ""))}>Cancel {session.weekly ? "every week" : "this session"}</button>}
                 </div>
@@ -433,14 +432,15 @@ export function PortalEarnings({ me }: { me: Clinician }) {
         <p className="pt-stat"><span>Held now · yours</span><strong>{poundsText(clinicianShare(held.reduce((sum, item) => sum + item.price, 0)))}</strong><span>{held.length} booked, paid when you finish each one</span></p>
         <p className="pt-stat"><span>Paid this month · yours</span><strong>{poundsText(clinicianShare(paidMonth.reduce((sum, item) => sum + item.price, 0)))}</strong><span>{paidMonth.length} consultation{paidMonth.length === 1 ? "" : "s"}, after Rehyn's {shareText(REHYN_SHARE)} share</span></p>
       </div>
-      <section className="pt-flow" aria-labelledby="pt-flow">
-        <h2 className="cl-h2" id="pt-flow">How a payment moves</h2>
+      {/* A question clinicians ask, with the steps behind it rather than a card of its own. */}
+      <details className="pt-faq">
+        <summary>When do I get paid?</summary>
         <ol>
-          <li><strong>1 · Patient books</strong>Their card is authorised and the amount held.</li>
-          <li><strong>2 · You finish the call</strong>"Finish consultation" takes the held amount.</li>
-          <li><strong>3 · Paid out on Friday</strong>Everything finished by Thursday night goes out that Friday.</li>
+          <li><strong>Patient books.</strong> Their card is authorised and the amount held.</li>
+          <li><strong>You finish the call.</strong> "Finish consultation" takes the held amount.</li>
+          <li><strong>Paid out on Friday.</strong> Everything finished by Thursday night goes out that Friday.</li>
         </ol>
-      </section>
+      </details>
       <section className="pt-card" aria-labelledby="pt-money-list">
         <div className="pt-card-head">
           <h2 className="cl-h2" id="pt-money-list">Consultations</h2>

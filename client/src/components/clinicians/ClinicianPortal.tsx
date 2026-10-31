@@ -92,7 +92,7 @@ function UrgentAlert({ me, list, now }: { me: Clinician; list: Consultation[]; n
   return null;
 }
 
-function Shell({ me, everyone, ownId }: { me: Clinician; everyone: Clinician[]; ownId: string | null }) {
+function Shell({ me }: { me: Clinician }) {
   const [location] = useLocation();
   const now = useNow(1000);
   const list = useConsultations();
@@ -109,12 +109,6 @@ function Shell({ me, everyone, ownId }: { me: Clinician; everyone: Clinician[]; 
             </Link>
           ))}
         </div>
-        <label className="pt-side-card pt-as">
-          <span className="pt-side-label">{ownId === me.id ? "Signed in as" : "Using the demo profile of"}</span>
-          <select value={me.id} onChange={event => setPortalClinician(event.target.value === ownId ? null : event.target.value)}>
-            {everyone.map(person => <option key={person.id} value={person.id}>{person.id === ownId ? `${person.name} (you)` : `${person.name} · demo profile`}</option>)}
-          </select>
-        </label>
       </nav>
       <main className="pt-main">
         <UrgentAlert me={me} list={list} now={now} />
@@ -141,7 +135,7 @@ export default function ClinicianPortal() {
   // Rehyn Connect for clinicians: the portal is always the signed-in clinician's (lib/me.ts), the demo profile when
   // nobody has joined on this device, so it matches the sidebar, the feed and the weekly sessions.
   const me = everyone.find(person => person.id === signedInId(picked, own?.id ?? null, everyone));
-  if (me) return <Shell me={me} everyone={everyone} ownId={own?.id ?? null} />;
+  if (me) return <Shell me={me} />;
   return (
     <div className="cl-page cl-narrow">
       <p className="cl-kicker"><span aria-hidden="true" />Clinician portal</p>

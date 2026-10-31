@@ -48,7 +48,6 @@ export function SessionCard({ session, now, host = false }: { session: GroupSess
         {open
           ? <Link href={`~/clinicians/meet/${sessionRoom(session)}${host ? "?as=clinician" : ""}`} className="cl-btn"><Video size={18} aria-hidden="true" />{host ? "Start the session" : "Join the session"}</Link>
           : !host && <button type="button" className="cl-btn is-light" aria-pressed={saved} onClick={() => togglePlace(session.id)}><Bookmark size={16} fill={saved ? "currentColor" : "none"} aria-hidden="true" />{saved ? "Place saved" : `Save my place · ${session.spaces} places`}</button>}
-        {!open && host && <span className="cl-small">The room opens 10 minutes before.</span>}
       </div>
       {!host && saved && !open && <AskAhead session={session} />}
     </article>

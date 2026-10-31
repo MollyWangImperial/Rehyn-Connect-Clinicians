@@ -193,7 +193,6 @@ export default function PortalProfile({ me }: { me: Clinician }) {
         </div>
       </div>
       {saved && <p className="cl-sent" role="status"><strong>Saved.</strong> Your profile is updated in the directory on this device. A change of price is a request, below.</p>}
-      {!me.own && <p className="cl-preview">Preview: {me.name} is an example clinician. Changes you make are kept on this device only.</p>}
 
       <div className="pt-cols">
         <div className="pt-stack pt-wide">

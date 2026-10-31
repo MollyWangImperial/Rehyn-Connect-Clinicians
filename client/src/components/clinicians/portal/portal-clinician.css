@@ -183,10 +183,17 @@
 .pt-portal .pt-stat { gap: 4px; padding: 16px 18px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); background: var(--cx-surface); color: var(--cx-muted); box-shadow: var(--cx-shadow); }
 .pt-portal .pt-stat span:first-child { font: 600 12px/1.4 var(--cx-font); letter-spacing: 0.04em; }
 .pt-portal .pt-stat strong { color: var(--cx-ink); font: 700 28px/1.15 var(--cx-font); font-variant-numeric: tabular-nums; }
-.pt-portal .pt-flow { gap: 12px; padding: 18px 20px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); background: var(--cx-surface); box-shadow: var(--cx-shadow); }
-.pt-portal .pt-flow ol { gap: 8px; }
-.pt-portal .pt-flow li { padding: 12px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-subtle); color: var(--cx-ink); }
-.pt-portal .pt-flow li strong { color: var(--cx-accent); font: 600 13px var(--cx-font); }
+/* "When do I get paid?": a plain question that opens to the steps, not a card. */
+.pt-portal .pt-faq { color: var(--cx-ink); font-family: var(--cx-font); }
+.pt-portal .pt-faq summary { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; color: var(--cx-accent); font: 600 14.5px var(--cx-font); cursor: pointer; list-style: none; }
+.pt-portal .pt-faq summary::-webkit-details-marker { display: none; }
+.pt-portal .pt-faq summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.12s; }
+.pt-portal .pt-faq[open] summary::before { transform: rotate(45deg); }
+.pt-portal .pt-faq summary:hover { text-decoration: underline; }
+.pt-portal .pt-faq summary:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
+.pt-portal .pt-faq ol { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 0 !important; padding-left: 34px !important; list-style: decimal !important; color: var(--cx-muted); font-size: 14px; line-height: 1.5; }
+.pt-portal .pt-faq li strong { color: var(--cx-ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .pt-portal .pt-faq summary::before { transition: none; } }
 .pt-portal .pt-table th { color: var(--cx-muted); font: 600 12px/1.4 var(--cx-font); letter-spacing: 0.04em; }
 .pt-portal .pt-table td { border-top-color: var(--cx-line); }
 .pt-portal .pt-amount { font: 600 14.5px var(--cx-font); font-variant-numeric: tabular-nums; }

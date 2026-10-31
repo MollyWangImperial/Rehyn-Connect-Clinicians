@@ -229,7 +229,7 @@ describe("the Clinicians tab", () => {
     expect(draw("/clinicians/urgent").text).toContain("Alert clinicians now");
     const portal = draw("/clinicians/portal").text;
     expect(portal).toContain("Clinician portal");
-    expect(portal).toContain("Using the demo profile of Dr Amara Osei");
+    expect(portal).not.toContain("Using the demo profile of");
     for (const page of ["", "requests", "schedule", "consultations", "sessions", "earnings", "profile"]) {
       const { text } = draw(`/clinicians/portal/${page}`);
       expect(text, page).not.toContain("Try the portal as");
