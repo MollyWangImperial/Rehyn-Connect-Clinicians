@@ -32,8 +32,8 @@ function Head({ kicker, title, children }: { kicker: string; title: string; chil
   return (
     <div className="pt-head">
       <div>
-        <p className="cl-kicker"><span aria-hidden="true" />{kicker}</p>
-        <h1 className="cl-h1" data-page-heading>{title}<span aria-hidden="true">.</span></h1>
+        <p className="cl-kicker">{kicker}</p>
+        <h1 className="cl-h1" data-page-heading>{title}</h1>
       </div>
       {children && <div className="pt-head-actions">{children}</div>}
     </div>

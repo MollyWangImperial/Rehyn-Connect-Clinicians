@@ -7,7 +7,6 @@ import {
 import { librarySections } from "@/content/library";
 import { cancelPriceRequest, profileGaps, registerText, requestPriceChange, updateClinician, usePriceRequests } from "@/lib/clinician-portal";
 import ClinicianCard from "../ClinicianCard";
-import { hueStyle } from "../parts";
 
 // Profile & pricing in the clinician portal: what patients see (name, role, experience, about, how you help, languages,
 // the Library conditions you work with), your price, your registration, and whether you're listed. The card on the
@@ -186,8 +185,8 @@ export default function PortalProfile({ me }: { me: Clinician }) {
     <div className="pt-page">
       <div className="pt-head">
         <div>
-          <p className="cl-kicker"><span aria-hidden="true" />What patients see</p>
-          <h1 className="cl-h1" data-page-heading>Profile &amp; pricing<span aria-hidden="true">.</span></h1>
+          <p className="cl-kicker">What patients see</p>
+          <h1 className="cl-h1" data-page-heading>Profile &amp; pricing</h1>
         </div>
         <div className="pt-head-actions">
           <button type="button" className="cl-request" onClick={save}>Save changes</button>
@@ -242,7 +241,7 @@ export default function PortalProfile({ me }: { me: Clinician }) {
                   const place = groupPlace(g);
                   const condition = place?.group.conditions.find(item => item.id === c);
                   if (!place || !condition) return null;
-                  return <button key={`${g}/${c}`} type="button" className="cl-chip is-link pt-chip-remove" style={hueStyle(place.section.hue)} onClick={() => toggleCondition(g, c)} aria-label={`Remove ${condition.title}`}>{condition.title}<X size={14} aria-hidden="true" /></button>;
+                  return <button key={`${g}/${c}`} type="button" className="cl-chip is-link pt-chip-remove" onClick={() => toggleCondition(g, c)} aria-label={`Remove ${condition.title}`}>{condition.title}<X size={14} aria-hidden="true" /></button>;
                 })}
               </div>
             )}
@@ -257,7 +256,7 @@ export default function PortalProfile({ me }: { me: Clinician }) {
                 </select></label>
             </div>
             {group && (
-              <div className="pt-pick" style={hueStyle(section.hue)}>
+              <div className="pt-pick">
                 {group.conditions.map(condition => (
                   <button key={condition.id} type="button" aria-pressed={has(group.id, condition.id)} onClick={() => toggleCondition(group.id, condition.id)}>{condition.title}</button>
                 ))}

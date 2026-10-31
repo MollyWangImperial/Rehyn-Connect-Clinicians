@@ -1,15 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Route, Switch, useLocation } from "wouter";
 import { BellRing, CalendarDays, CreditCard, House, Inbox, UserRound, Users, Video, X } from "lucide-react";
-import { alertable, mainSection, type Clinician } from "@/content/clinicians";
+import { alertable, type Clinician } from "@/content/clinicians";
 import { updateClinician, useClinicians, useOwnClinician, useRole } from "@/lib/clinician-portal";
 import { URGENT_WAIT_MS, answer, setPortalClinician, updateConsultation, useConsultations, usePortalClinician, type Consultation } from "@/lib/consultations";
 import { meId as signedInId } from "@/lib/me";
-import { PreviewNote, hueStyle } from "./parts";
+import { PreviewNote } from "./parts";
 import { PortalConsultations, PortalEarnings, PortalRequests, PortalSessions, PortalToday } from "./portal/pages";
 import PortalSchedule from "./portal/Schedule";
 import PortalProfile from "./portal/ProfileEditor";
 import "./portal/portal.css";
+import "./portal/portal-clinician.css";
 
 // The clinician portal (/clinicians/portal), from the design canvas "Rehyn Clinician Portal": Today, Requests,
 // Schedule, Consultations, Group sessions, Earnings and Profile & pricing, with urgent requests popping up on every page.
@@ -63,7 +64,7 @@ function UrgentAlert({ me, list, now }: { me: Clinician; list: Consultation[]; n
     return (
       <section className="pt-urgent" role="alertdialog" aria-labelledby="pt-urgent-title">
         <div className="pt-urgent-top">
-          <span className="pt-ring" style={{ background: `conic-gradient(#fffdf7 0 ${share * 100}%, rgba(255,255,255,.22) ${share * 100}% 100%)` }}>
+          <span className="pt-ring" style={{ background: `conic-gradient(var(--cx-danger) 0 ${share * 100}%, var(--cx-line) ${share * 100}% 100%)` }}>
             <span>{waiting.status === "escalated" ? "Team told" : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`}</span>
           </span>
           <p className="pt-urgent-kicker"><BellRing size={16} aria-hidden="true" />Urgent request · ref {waiting.ref}</p>
@@ -98,7 +99,7 @@ function Shell({ me, everyone, ownId }: { me: Clinician; everyone: Clinician[]; 
   const waiting = list.filter(item => item.clinicianId === me.id && item.status === "requested").length;
   const here = (href: string) => (href === "/" ? location === "/" || location === "" : location.startsWith(href));
   return (
-    <div className="pt-portal" style={hueStyle(mainSection(me).hue)}>
+    <div className="pt-portal">
       <nav className="pt-side" aria-label="Clinician portal">
         <p className="pt-side-brand">Clinician portal</p>
         <div className="pt-side-links">

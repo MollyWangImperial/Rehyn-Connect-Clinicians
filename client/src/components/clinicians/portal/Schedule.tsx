@@ -97,8 +97,8 @@ export default function PortalSchedule({ me }: { me: Clinician }) {
     <div className="pt-page">
       <div className="pt-head">
         <div>
-          <p className="cl-kicker"><span aria-hidden="true" />When patients can book you</p>
-          <h1 className="cl-h1" data-page-heading>Schedule &amp; availability<span aria-hidden="true">.</span></h1>
+          <p className="cl-kicker">When patients can book you</p>
+          <h1 className="cl-h1" data-page-heading>Schedule &amp; availability</h1>
         </div>
         <div className="pt-head-actions"><button type="button" className="cl-btn is-light" disabled title="Coming soon">Connect Google or Outlook calendar · soon</button></div>
       </div>
