@@ -63,7 +63,7 @@ describe("the directory of colleagues", () => {
     expect(text).toContain("Accept Ruth Calloway's invitation");
     expect(text).toContain("Connect with Sophie Adair");
     // The heading no longer carries a My network card with connection and invitation counts...
-    expect(head(html)).not.toMatch(/My network|connection|invitation/i);
+    expect(head(html)).not.toMatch(/My network|\d+ connections?|invitation|cn-net/i);
     expect(html).not.toContain('href="/community?panel=friends"');
     expect(html).not.toContain('href="/community?panel=friends&amp;tab=requests"');
     // ...the connection count is in the sidebar's profile card instead, opening My Network at Connections.
