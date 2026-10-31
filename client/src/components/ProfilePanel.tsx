@@ -1,6 +1,6 @@
 import { useId } from "react";
 import { Link } from "wouter";
-import { CalendarDays, Plus, ShieldCheck, Stethoscope, UsersRound } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Plus, ShieldCheck, Stethoscope, UsersRound } from "lucide-react";
 import { administrativeControlsEnabled } from "@/lib/administrative-controls";
 import { CARE_TEAM_PATH, useCareTeamEnabled, useCareTeamWaiting } from "@/lib/care-team";
 import { communityHref, friendList, pendingRequestCount, useCommunity } from "@/lib/community-store";
@@ -72,6 +72,10 @@ export default function ProfilePanel({ careTeam = false, onNavigate }: { careTea
             </Link>
           </li>
         </ul>
+        {/* The clinician's own portal: requests, schedule, consultations, group sessions, earnings and profile. */}
+        <Link className="cx-btn cx-btn-primary site-portal-btn" {...link("/clinicians/portal")}>
+          <LayoutDashboard size={16} aria-hidden="true" />Open your portal
+        </Link>
       </section>
 
       <section className="site-groups" aria-labelledby={`${searchId}-groups`}>
