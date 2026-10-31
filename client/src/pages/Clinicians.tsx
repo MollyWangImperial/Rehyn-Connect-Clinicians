@@ -241,7 +241,7 @@ function ClinicianHub({ page }: { page: ClinicianPage }) {
       <div className="cn-head">
         <div className="cn-head-text">
           <p className="cx-kicker">Connect with healthcare professionals</p>
-          <h1 className="cn-h1" data-page-heading>Your Clinical Network</h1>
+          <h1 className="cn-h1" data-page-heading>Find Your Connections</h1>
         </div>
       </div>
 

@@ -146,7 +146,7 @@ describe("the Clinicians tab", () => {
     const { html } = draw("/clinicians");
     expect(panels(html)).toEqual([["find", false]]);
     expect(html).not.toContain('class="cl-tab"');
-    expect(html.match(/<h1[^>]*>Your Clinical Network</g)).toHaveLength(1);
+    expect(html.match(/<h1[^>]*>Find Your Connections</g)).toHaveLength(1);
     expect(html).not.toMatch(/<h1[^>]*>Clinicians/);
     // My consultations is in the portal now.
     const consultations = draw("/clinicians/consultations");
