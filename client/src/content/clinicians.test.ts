@@ -233,7 +233,7 @@ describe("the Clinicians tab", () => {
     for (const page of ["", "requests", "schedule", "consultations", "sessions", "earnings", "profile"]) {
       const { text } = draw(`/clinicians/portal/${page}`);
       expect(text, page).not.toContain("Try the portal as");
-      expect(text, page).toContain("Dr Amara Osei");
+      expect(text, page).toContain("Profile &amp; pricing");
     }
     expect(draw("/clinicians/meet/abcdefghijklmnop").text).toContain("isn&#x27;t on this device");
     for (const path of ["/clinicians/urgent", "/clinicians/portal"]) expect(draw(path).text).not.toContain("We couldn&#x27;t find that clinician");
