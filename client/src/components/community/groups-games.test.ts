@@ -78,7 +78,9 @@ describe("private groups never show to non-members", () => {
     expect(html).toContain("Young Stroke Clinicians");
     expect(html).toContain("Hyperacute Stroke Care");
     expect(html).not.toContain("Stroke Unit Leads");
-    expect(html).toContain("Private groups you are not in never appear here.");
+    // The rule holds without a line explaining it (or counting the groups shown).
+    expect(html).not.toContain("Private groups you are not in never appear here.");
+    expect(groupsPage()).not.toContain("cm-sub-count");
     const parkinsons = words(groupsPage("&cond=parkinsons"));
     expect(parkinsons).toContain("Parkinson's Clinical Network");
     expect(parkinsons).toContain("Parkinson's Medication Safety");
@@ -111,11 +113,19 @@ describe("condition groups for clinicians (comment 14)", () => {
     expect(html).not.toMatch(/class="cm-cond-tile[^"]*"[^>]*style=/);
   });
 
-  it("shows the chosen condition's professional purpose, relevant expertise and membership state", () => {
-    const stroke = words(groupsPage());
+  it("is headed Explore Clinical Communities, and shows the chosen condition's name, purpose and membership state only", () => {
+    const html = groupsPage();
+    const stroke = words(html);
+    expect(html).toMatch(/<h2[^>]*class="cm-conds-title"[^>]*>Explore Clinical Communities<\/h2>/);
+    expect(stroke).toContain("Join communities of healthcare professionals working across shared clinical interests, specialties, and conditions.");
+    expect(stroke).not.toContain("Groups by condition");
     expect(stroke).toContain("Acute care, rehabilitation and secondary prevention after stroke and TIA.");
-    expect(stroke).toContain("Relevant expertise Stroke physicians, neuro physios, SLTs, OTs, stroke nurses");
     expect(stroke).toContain("Member of the Stroke network");
+    // No "Condition network" label and no facts block (relevant expertise, network size) over the groups.
+    for (const gone of ["Condition network", "Relevant expertise", "7 groups you can see"]) expect(stroke).not.toContain(gone);
+    expect(html).not.toContain("cm-network-facts");
+    // The selector cards keep their counts.
+    expect(stroke).toContain("1,240 clinicians");
     const ms = words(groupsPage("&cond=ms"));
     expect(ms).toContain("Disease-modifying therapy, relapse care, fatigue and mobility in MS.");
     expect(ms).toContain("Join Multiple sclerosis network");
@@ -200,7 +210,7 @@ describe("no games for clinicians (comment 7)", () => {
     expect(page).not.toContain("cm-bs-main");
     expect(page).toMatch(/<h2[^>]*id="cm-group-title"[^>]*>Stroke Rehabilitation Network<\/h2>/);
     const open = store.startOpenGame("chess", NOW)!;
-    expect(groupsPage(`&game=${open.id}`)).toContain("Groups by condition");
+    expect(groupsPage(`&game=${open.id}`)).toContain("Explore Clinical Communities");
   });
 
   it("offers no games when starting a group, and new groups start without them", () => {

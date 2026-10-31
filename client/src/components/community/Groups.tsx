@@ -4,7 +4,7 @@ import { conditions, groupQuickReplies, inviteFriends, people, startConditions, 
 import { canSee, communityHref, communityStore, communityViewFromQuery, inCondition, isBlocked, listNames, useCommunity, type NoteDraft, type OwnNote } from "@/lib/community-store";
 import { conditionOf, homeCondition, lastLine, myGroups, visibleSubgroupCount, visibleSubgroups, type GroupModel, type SubgroupCard } from "./group-model";
 import { usePinnedToEnd } from "./hooks";
-import { CheckIcon, ChevronDownIcon, ClockIcon, EyeIcon, GlobeIcon, LockIcon, NextIcon, PlusIcon, PulseIcon, UsersIcon } from "./icons";
+import { CheckIcon, ChevronDownIcon, ClockIcon, GlobeIcon, LockIcon, NextIcon, PlusIcon, PulseIcon, UsersIcon } from "./icons";
 import { ChatInput, Cover, Face, LiveDot, MyFace, MyMessage, toneClass, TypingRow } from "./parts";
 
 // Groups for clinicians (comments 14 and 22): medical condition networks, each with the professional groups inside it.
@@ -108,8 +108,8 @@ function ConditionGroups({ chosen }: { chosen: ConditionId | null }) {
   return (
     <div className="cm-conds">
       <div className="cm-conds-head">
-        <h2 className="cm-conds-title" tabIndex={-1} data-view-heading>Groups by condition</h2>
-        <p className="cm-conds-intro">Professional groups organised by medical condition. Choose a condition to see its groups, then join the ones relevant to your practice.</p>
+        <h2 className="cm-conds-title" tabIndex={-1} data-view-heading>Explore Clinical Communities</h2>
+        <p className="cm-conds-intro">Join communities of healthcare professionals working across shared clinical interests, specialties, and conditions.</p>
       </div>
 
       <nav className="cm-cond-tiles" aria-label="Conditions">
@@ -132,13 +132,8 @@ function ConditionGroups({ chosen }: { chosen: ConditionId | null }) {
         <section className="cm-card cm-inside" aria-labelledby="cm-inside-title">
           <div className="cm-network">
             <div className="cm-network-text">
-              <p className="cm-overline">Condition network</p>
               <h3 className="cm-inside-title" id="cm-inside-title">{cond.name}</h3>
               <p className="cm-network-purpose">{cond.purpose}</p>
-              <dl className="cm-network-facts">
-                <div><dt>Relevant expertise</dt><dd>{cond.expertise}</dd></div>
-                <div><dt>Network</dt><dd>{`${cond.members} · ${groupCount(all.length)} you can see`}</dd></div>
-              </dl>
             </div>
             <div className="cm-network-state">
               {member ? (
@@ -174,7 +169,6 @@ function ConditionGroups({ chosen }: { chosen: ConditionId | null }) {
               <Link className="cx-btn cx-btn-primary" href={communityHref("start", null, { cond: cond.id })}><PlusIcon size={16} />Start a group</Link>
             </div>
           )}
-          <p className="cm-sub-count"><EyeIcon size={16} strokeWidth={2} />{`${shown.length} ${shown.length === 1 ? "group" : "groups"} shown. Private groups you are not in never appear here.`}</p>
           <p className="cm-sr" role="status">{status}</p>
         </section>
 

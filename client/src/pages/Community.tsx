@@ -162,7 +162,7 @@ export default function Community() {
         {isOpen("start") && (
           <div className="cm-space" data-space="start" hidden={view.space !== "start"}>
             <header className="cm-start-head">
-              <Link className="cm-back" href={communityHref("groups")}><BackIcon size={18} /><span>Groups by condition</span></Link>
+              <Link className="cm-back" href={communityHref("groups")}><BackIcon size={18} /><span>Explore Clinical Communities</span></Link>
               <h1 className="cm-title" tabIndex={-1} data-view-heading>Start a group</h1>
               <p className="cm-start-intro">A professional group inside a condition network: private unless you choose otherwise, with a group chat for case discussion and shared resources.</p>
             </header>
