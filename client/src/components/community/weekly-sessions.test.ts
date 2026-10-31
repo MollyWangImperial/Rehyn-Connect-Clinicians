@@ -51,17 +51,40 @@ describe("Group weekly sessions", () => {
     expect(html).toContain('href="/community?space=circle"');
   });
 
-  it("shows the session view: heading, the open sitting's details, host action and questions", () => {
+  it("shows the session view with no session open until one is picked: heading, counts and the coming sessions", () => {
     at(WEDNESDAY);
     const html = draw("/community?space=circle", createElement(WeeklySessionsView, { active: true }));
     const text = words(html);
     expect(html).toMatch(/<h1[^>]*tabindex="-1"[^>]*data-view-heading[^>]*>Group weekly sessions<\/h1>/);
     expect(text).not.toMatch(/Sunday circle|teacup/i);
-    for (const label of ["Topics", "Date", "Time", "Duration", "Places", "Upcoming", "Finished"]) expect(text).toContain(label);
-    expect(text).toContain("Stroke, Blood pressure");
-    expect(text).toContain("The room opens at 17:50");
-    expect(text).toContain("Example questions (preview)");
+    expect(text).not.toContain("Patients send their questions in advance and you answer them live on video");
+    // Two counts: what is coming up, and every sitting organised, the finished ones included although they aren't listed.
+    expect(text).toContain("Coming up 2");
+    expect(text).toContain("Total sessions organized 4");
+    for (const gone of ["Live now", "Questions sent in", "Finished in the last week"]) expect(text).not.toContain(gone);
+    // Each row: the date block, the time range alone (the full date for screen readers) and the title; no topic, length or places.
+    expect(text).toContain("Thursday 5 November, 18:00–18:45");
+    expect(html).not.toContain("Thu 5 Nov, 18:00");
+    expect(html).not.toContain("ws-row-meta");
+    expect(text).not.toContain("45 min · 20 places");
+    // No session's details until one is picked.
+    expect(html).not.toContain("ws-detail");
     expect(html).toContain('href="/clinicians/portal/sessions"');
+  });
+
+  it("opens a picked session's details: no top strip, a short room note, and an empty questions list when none were sent", () => {
+    at(WEDNESDAY);
+    const session = hostedSessions([], "amara-osei", WEDNESDAY.getTime()).coming[0];
+    const html = draw(sessionViewHref(session), createElement(WeeklySessionsView, { active: true }));
+    const text = words(html);
+    expect(html).toContain("ws-detail");
+    expect(html).not.toContain("ws-detail-top");
+    for (const label of ["Topics", "Date", "Time", "Duration", "Places"]) expect(text).toContain(label);
+    expect(text).toContain("Stroke, Blood pressure");
+    expect(text).toContain("The room opens at 17:50.");
+    expect(text).not.toContain("10 minutes before the start");
+    expect(html).toContain('<ol class="ws-q-list"></ol>');
+    for (const gone of ["Example questions (preview)", "Not from real patients", "No questions have reached this preview"]) expect(text).not.toContain(gone);
   });
 
   it("opens the sitting named in the address, and its host link once the room is open", () => {

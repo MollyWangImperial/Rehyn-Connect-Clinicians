@@ -35,6 +35,10 @@ export function hostedSessions(created: GroupSession[], clinicianId: string, now
   return { coming, finished };
 }
 
+/** How many sittings the clinician has organised: everything their sessions record holds, upcoming, live and finished
+ *  (the finished ones count although the page no longer lists them). */
+export const organisedCount = ({ coming, finished }: HostedSessions) => coming.length + finished.length;
+
 /** The Library groups a session is listed with, as patients know them: "Stroke, Blood pressure". */
 export function patientGroupText(session: GroupSession): string {
   const titles = sessionGroupIds(session).map(id => groupPlace(id)?.group.title).filter((title): title is string => !!title);
