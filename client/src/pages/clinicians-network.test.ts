@@ -28,7 +28,7 @@ const states = (html: string) =>[...html.matchAll(/data-connection="(\w+)"/g)].m
 describe("the directory of colleagues", () => {
   it("lists every other clinician with networking copy and no patient booking", () => {
     const { html, text } = draw("/clinicians");
-    expect(text).toContain("Doctors and healthcare professionals");
+    expect(text).toContain("Connect with healthcare professionals");
     expect(html).toMatch(/<h1[^>]*>Your Clinical Network<\/h1>/);
     expect(text).not.toContain("Professional network");
     // The heading stands alone: no intro paragraph under it.

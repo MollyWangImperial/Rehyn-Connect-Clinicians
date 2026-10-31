@@ -240,7 +240,7 @@ function ClinicianHub({ page }: { page: ClinicianPage }) {
       {/* The connection count lives in the sidebar's profile card now (and My Network has its own row there). */}
       <div className="cn-head">
         <div className="cn-head-text">
-          <p className="cx-kicker">Doctors and healthcare professionals</p>
+          <p className="cx-kicker">Connect with healthcare professionals</p>
           <h1 className="cn-h1" data-page-heading>Your Clinical Network</h1>
         </div>
       </div>
