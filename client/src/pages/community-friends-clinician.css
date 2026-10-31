@@ -1,0 +1,80 @@
+/* My Network drawer in Rehyn Connect for clinicians: the main pages' look (clinician-edition.css tokens) instead of the
+   patient edition's warm, rounded one. A square-edged white shell, a sans-serif title, underlined tabs, rectangular
+   cards and controls with small radii, a neutral note panel, and the site's primary blue for the main actions. The same
+   rules cover all four tabs: Invitations, Sent, Connections and Blocked. */
+
+.cm-dialog.cm-fr-drawer {
+  --cm-ink: var(--cx-ink);
+  --cm-muted: var(--cx-muted);
+  --cm-line: var(--cx-line);
+  --cm-card: var(--cx-surface);
+  --cm-bubble: var(--cx-subtle);
+  --cm-green: var(--cx-accent);
+  --cm-deep: var(--cx-accent);
+  --cm-mint: var(--cx-accent-soft);
+  --cm-shadow: none;
+  border-radius: 0 !important;
+  border-left: 1px solid var(--cx-line);
+  background: var(--cx-canvas);
+  color: var(--cx-ink);
+  font-family: var(--cx-font);
+}
+
+/* Head: title, counts line and the close button. */
+.cm-fr-drawer .cm-dialog-title { font: 700 22px/1.25 var(--cx-font); letter-spacing: -0.01em; color: var(--cx-ink); }
+.cm-fr-drawer .cm-dialog-title:focus { outline: none; }
+.cm-fr-drawer .cm-dialog-title:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 3px; }
+.cm-fr-drawer .cm-dialog-titles p { color: var(--cx-muted); font-size: 13.5px; }
+.cm-fr-drawer .cm-dialog-close { width: 36px; height: 36px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius); background: var(--cx-surface); color: var(--cx-ink); }
+.cm-fr-drawer .cm-dialog-close:hover { background: var(--cx-subtle); border-color: var(--cx-line-strong); }
+
+/* Tabs: a line of underlined tabs, like the main pages' top bar. */
+.cm-fr-drawer .cm-segments { gap: 0; padding: 0; border-bottom: 1px solid var(--cx-line); border-radius: 0; background: transparent; }
+.cm-fr-drawer .cm-segment { gap: 6px; min-height: 42px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; box-shadow: none; color: var(--cx-muted); font: 600 14px var(--cx-font); }
+.cm-fr-drawer .cm-segment:hover { background: var(--cx-subtle); color: var(--cx-ink); }
+.cm-fr-drawer .cm-segment[aria-selected="true"] { border-bottom-color: var(--cx-accent); background: transparent; color: var(--cx-ink); box-shadow: none; }
+.cm-fr-drawer .cm-segment:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: -2px; }
+.cm-fr-drawer .cm-segment-count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 4px; background: var(--cx-subtle); color: var(--cx-muted); font: 700 11.5px/20px var(--cx-font); }
+.cm-fr-drawer .cm-segment-count.is-waiting { background: var(--cx-accent); color: #fff; }
+
+/* Cards and rows. */
+.cm-fr-drawer .cm-fr-panel { border-radius: 0; }
+.cm-fr-drawer :is(.cm-fr-card, .cm-fr-accepted, .cm-fr-declined, .cm-fr-confirm, .cm-fr-off, .cm-fr-caught-up) { border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); background: var(--cx-surface); box-shadow: none; }
+.cm-fr-drawer .cm-fr-request-name { color: var(--cx-ink); font: 700 16px/1.3 var(--cx-font); }
+.cm-fr-drawer .cm-fr-request-name span { color: var(--cx-accent); font-weight: 600; font-size: 13.5px; }
+.cm-fr-drawer :is(.cm-fr-sub, .cm-fr-mutual, .cm-fr-when, .cm-fr-hint, .cm-fr-empty) { color: var(--cx-muted); }
+.cm-fr-drawer .cm-fr-person-text b { color: var(--cx-ink); font-weight: 700; }
+.cm-fr-drawer .cm-fr-person-text span { color: var(--cx-muted); }
+.cm-fr-drawer .cm-fr-person-text .is-online { color: var(--cx-ok); }
+.cm-fr-drawer .cm-fr-person-text .is-rust { color: var(--cx-danger); }
+.cm-fr-drawer .cm-fr-list { gap: 8px; }
+.cm-fr-drawer .cm-fr-friends > li { padding: 10px 12px; border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); background: var(--cx-surface); }
+.cm-fr-drawer .cm-fr-online { border-color: var(--cx-surface); background: var(--cx-ok); }
+
+/* The note with an invitation: a neutral panel, not a coloured bubble. */
+.cm-fr-drawer .cm-fr-note { padding: 10px 12px; border: 1px solid var(--cx-line); border-left: 3px solid var(--cx-line-strong); border-radius: var(--cx-radius); background: var(--cx-subtle); color: var(--cx-ink); font-size: 14px; line-height: 1.5; }
+
+/* Actions: the main site's primary blue and its plain secondary button. */
+.cm-fr-drawer :is(.cm-fr-accept, .cm-fr-yes) { min-height: 40px; border: 1px solid var(--cx-accent); border-radius: var(--cx-radius); background: var(--cx-accent); color: #fff; font: 600 14.5px var(--cx-font); box-shadow: none; }
+.cm-fr-drawer :is(.cm-fr-accept, .cm-fr-yes):hover { background: var(--cx-accent-hover); border-color: var(--cx-accent-hover); }
+.cm-fr-drawer :is(.cm-fr-later, .cm-fr-keep, .cm-fr-pill, .cm-fr-wave, .cm-fr-add) { min-height: 40px; border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius); background: var(--cx-surface); color: var(--cx-ink); font: 600 14px var(--cx-font); box-shadow: none; }
+.cm-fr-drawer :is(.cm-fr-later, .cm-fr-keep, .cm-fr-pill, .cm-fr-wave, .cm-fr-add):hover { border-color: var(--cx-muted); background: var(--cx-subtle); }
+.cm-fr-drawer .cm-fr-add { border-color: var(--cx-accent); color: var(--cx-accent); }
+.cm-fr-drawer :is(.cm-fr-pill, .cm-fr-add, .cm-fr-wave).is-on, .cm-fr-drawer .cm-fr-wave[aria-disabled="true"] { border-color: var(--cx-line); background: var(--cx-subtle); color: var(--cx-muted); }
+.cm-fr-drawer :is(.cm-fr-accept, .cm-fr-later, .cm-fr-keep, .cm-fr-yes, .cm-fr-pill, .cm-fr-wave, .cm-fr-add, .cm-fr-more, .cm-fr-clear):focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
+.cm-fr-drawer .cm-fr-more { width: 36px; height: 36px; border-radius: var(--cx-radius); color: var(--cx-muted); }
+.cm-fr-drawer .cm-fr-more:hover { background: var(--cx-subtle); color: var(--cx-ink); }
+.cm-fr-drawer :is(.cm-text-button, .cm-fr-inline-undo, .cm-dialog-foot-link) { color: var(--cx-accent); }
+
+/* Search your connections, and the settings note at the bottom. */
+.cm-fr-drawer .cm-fr-find { min-height: 40px; border: 1px solid var(--cx-line-strong); border-radius: var(--cx-radius); background: var(--cx-surface); }
+.cm-fr-drawer .cm-fr-find:focus-within { outline: 2px solid var(--cx-accent); outline-offset: 1px; border-color: var(--cx-accent); }
+.cm-fr-drawer .cm-fr-clear { width: 36px; height: 36px; border-radius: var(--cx-radius); }
+.cm-fr-drawer .cm-fr-safety { border: 1px solid var(--cx-line); border-radius: var(--cx-radius-lg); background: var(--cx-surface); }
+.cm-fr-drawer .cm-fr-safety-icon { border-radius: var(--cx-radius); background: var(--cx-subtle); color: var(--cx-muted); }
+.cm-fr-drawer .cm-fr-overline { color: var(--cx-muted); font: 700 12px/1.4 var(--cx-font); letter-spacing: 0.04em; text-transform: uppercase; }
+.cm-fr-drawer .cm-fr-caught-up { color: var(--cx-ok); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-fr-drawer .cm-segment { transition: none; }
+}

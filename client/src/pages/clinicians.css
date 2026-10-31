@@ -412,16 +412,17 @@ legend.cl-label { margin-bottom: 8px; padding: 0; }
 .cn-avatar { display: inline-flex; }
 
 /* The heading, with My network beside it */
-.cn-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; }
+.cn-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; margin-bottom: 18px; }
 .cn-head-text { flex: 1 1 420px; min-width: 0; }
 .cn-h1 { margin-top: 6px !important; color: var(--cx-ink); font: 700 clamp(28px, 3vw, 34px)/1.15 var(--cx-font); letter-spacing: -0.02em; }
 .cn-lead { max-width: 640px; margin-top: 8px !important; color: var(--cx-muted); font-size: 15px; line-height: 1.55; }
-.cn-net { display: flex; flex: 0 1 auto; align-items: center; gap: 12px; min-width: 0; padding: 10px 14px; color: var(--cx-ink); text-decoration: none; transition: border-color .12s; }
-.cn-net:hover { border-color: var(--cx-line-strong); color: var(--cx-ink); }
-.cn-net > svg { flex: none; color: var(--cx-muted); }
-.cn-net-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; color: var(--cx-muted); font-size: 13px; }
-.cn-net-text strong { color: var(--cx-ink); font-size: 15px; }
-.cn-net-count { color: var(--cx-accent); font-weight: 600; }
+/* Clinical expertise: chips on a wide screen; on a phone the long labels go in a list instead. */
+.cn-areas-select { display: none; }
+@media (max-width: 560px) {
+  .cn-chiprow.cn-areas { display: none; }
+  .cn-areas-select { display: flex; flex-direction: column; gap: 6px; }
+  .cn-areas-select .cn-select { width: 100%; }
+}
 
 /* The tabs, as a line of underlined links */
 .cn-page .cl-tabs-row { margin: 18px 0 20px; }
@@ -566,7 +567,7 @@ legend.cl-label { margin-bottom: 8px; padding: 0; }
   .cn-top-body, .cn-section { padding-left: 16px; padding-right: 16px; }
   .cn-cover { height: 72px; }
 }
-@media (prefers-reduced-motion: reduce) { .cn-net, .cn-filter-chip { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .cn-filter-chip { transition: none; } }
 
 @media (max-width: 560px) {
   .cl-hero { padding: 22px; }

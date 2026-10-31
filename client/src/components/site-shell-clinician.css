@@ -29,6 +29,9 @@
 .site-me-title { overflow: hidden; max-width: 100%; color: var(--cx-muted); font-size: 12.5px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
 .site-me-link { color: var(--cx-accent); font-weight: 600; text-decoration: none; }
 .site-me-link:hover { text-decoration: underline; }
+.site-me-connections { margin-top: 2px; color: var(--cx-ink); font: 700 13px/1.4 var(--cx-font); text-decoration: none; }
+.site-me-connections:hover { color: var(--cx-accent); text-decoration: underline; }
+.site-me-connections:focus-visible { outline: 2px solid var(--cx-accent); outline-offset: 2px; }
 .site-row { border-radius: var(--cx-radius); }
 .site-row:hover, .site-row.is-active, .site-row[aria-expanded="true"] { background: var(--cx-subtle); }
 .site-row-icon { border-radius: var(--cx-radius); background: var(--cx-subtle); color: var(--cx-muted); }

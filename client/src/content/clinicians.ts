@@ -248,6 +248,43 @@ export function directoryFilters(search: string): { area: string; groups: string
   return { area: section.id, groups: query.getAll("group").filter(id => section.groups.some(group => group.id === id)) };
 }
 
+// --------------------------------------------------------------------------------- clinical areas (directory)
+
+/**
+ * The directory's Clinical expertise filter: professional clinical areas rather than the Library's patient-facing
+ * sections. A clinician is in an area when the conditions on their profile fall in it (their Library groups) or their
+ * own specialty names it (their role); a profile can be in several. Areas are areas of practice, never a qualification:
+ * a physiotherapist who works with Parkinson's is in Neurology without being called a neurologist.
+ */
+export type ClinicalArea = { id: string; label: string; groups: string[]; roles: RegExp };
+export const CLINICAL_AREAS: ClinicalArea[] = [
+  { id: "neurology", label: "Neurology", groups: ["parkinsons", "multiple-sclerosis", "dementia", "brain-spinal-injury"], roles: /neurolog/i },
+  { id: "stroke", label: "Stroke care and rehabilitation", groups: ["stroke"], roles: /stroke/i },
+  { id: "cardiology", label: "Cardiology", groups: ["heart-rhythm", "heart-attack", "blood-pressure", "cholesterol"], roles: /cardi/i },
+  { id: "respiratory", label: "Respiratory medicine", groups: ["long-term-lung", "sleep-breathing"], roles: /respirat|pulmon/i },
+  { id: "endocrinology", label: "Endocrinology and diabetes", groups: ["diabetes", "thyroid", "weight", "hormones"], roles: /diabet|endocrin/i },
+  { id: "msk", label: "Musculoskeletal medicine and rehabilitation", groups: ["back-neck", "joint-replacement", "muscles", "feet-tendons", "injuries", "bone-health", "gout-vitamins"], roles: /musculoskeletal|orthopaed|rheumat/i },
+  { id: "oncology", label: "Oncology and cancer rehabilitation", groups: ["common-cancers", "blood-cancers", "womens-cancers", "mens-cancers", "digestive-cancers", "other-cancers", "rarer-cancers", "after-treatment", "advanced-cancer"], roles: /oncolog|haematolog/i },
+  { id: "mental-health", label: "Mental health", groups: ["depression", "anxiety", "sleep", "bipolar-psychosis", "stress-grief", "alcohol", "eating-disorders", "adhd-autism"], roles: /psycholog|psychiatr|mental health/i },
+  { id: "nephrology", label: "Nephrology", groups: ["kidneys"], roles: /nephrolog|renal/i },
+  { id: "gastro", label: "Gastroenterology and hepatology", groups: ["liver", "stomach", "gut", "ibd"], roles: /gastro|hepatolog/i },
+];
+
+/** The clinical areas a clinician works in, from their profile's conditions and their role. */
+export function clinicalAreasOf(clinician: Pick<Clinician, "conditions" | "role">): ClinicalArea[] {
+  const groups = new Set(clinician.conditions.map(([groupId]) => groupId));
+  return CLINICAL_AREAS.filter(area => area.groups.some(id => groups.has(id)) || area.roles.test(clinician.role));
+}
+
+/** The area the directory's address asks for: `?expertise=<area>`, or the area of an older link's `?group=<library group>`. */
+export function clinicalAreaFromQuery(search: string): string {
+  const query = new URLSearchParams(search);
+  const asked = query.get("expertise");
+  if (asked && CLINICAL_AREAS.some(area => area.id === asked)) return asked;
+  const group = query.getAll("group").find(id => CLINICAL_AREAS.some(area => area.groups.includes(id)));
+  return group ? CLINICAL_AREAS.find(area => area.groups.includes(group))!.id : "all";
+}
+
 export type GroupPlace = { section: LibrarySection; group: LibraryGroup };
 
 /** Where a Library group sits: its section, for the colours and the condition-area filter. */

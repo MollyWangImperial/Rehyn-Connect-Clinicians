@@ -3,9 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Route, Router } from "wouter";
 import { SettingsContext } from "@/components/settings-context";
-import { connectionOf, matchesConnection, mutualOf } from "@/components/clinicians/network";
+import { connectionFilterOf, connectionOf, matchesConnection, mutualOf } from "@/components/clinicians/network";
+import ProfilePanel from "@/components/ProfilePanel";
 import Clinicians from "@/pages/Clinicians";
-import { CLINICIANS, findClinician } from "@/content/clinicians";
+import { CLINICIANS, clinicalAreasOf, findClinician } from "@/content/clinicians";
 import { communityStore, friendList, relationship, sentList } from "@/lib/community-store";
 import { DEMO_CLINICIAN_ID, meFrom } from "@/lib/me";
 
@@ -20,12 +21,19 @@ function draw(address: string) {
     createElement(Router, { hook, searchHook: () => search }, createElement(Route, { path: "/clinicians", nest: true }, createElement(Clinicians))))).replace(/ data-loc="[^"]*"/g, "");
   return { html, text: html.replace(/<[^>]+>/g, " ").replace(/&#x27;/g, "'").replace(/\s+/g, " ") };
 }
-const states = (html: string) => [...html.matchAll(/data-connection="(\w+)"/g)].map(match => match[1]);
+/** The directory's heading block: from its kicker and title up to the search. */
+const head = (html: string) => html.slice(html.indexOf('<div class="cn-head">'), html.indexOf('<h2 class="cl-sr">Find colleagues'));
+const states = (html: string) =>[...html.matchAll(/data-connection="(\w+)"/g)].map(match => match[1]);
 
 describe("the directory of colleagues", () => {
   it("lists every other clinician with networking copy and no patient booking", () => {
     const { html, text } = draw("/clinicians");
-    expect(text).toContain("Professional network");
+    expect(text).toContain("Doctors and healthcare professionals");
+    expect(html).toMatch(/<h1[^>]*>Your Clinical Network<\/h1>/);
+    expect(text).not.toContain("Professional network");
+    // The heading stands alone: no intro paragraph under it.
+    expect(head(html)).not.toContain("<p class=\"cn-lead\"");
+    expect(head(html).match(/<p[ >]/g)).toHaveLength(1);
     expect(text).toContain("Find colleagues");
     expect(text).toContain(`${CLINICIANS.length - 1} clinicians`);
     for (const person of CLINICIANS) {
@@ -34,7 +42,12 @@ describe("the directory of colleagues", () => {
     }
     expect(text).not.toMatch(/per consultation|Book a consultation|Need someone urgently|Talk to a clinician/);
     expect(html).not.toContain('href="/clinicians/urgent"');
-    for (const filter of ["Condition expertise", "Profession", "Connection", "Not connected", "Location"]) expect(text).toContain(filter);
+    for (const filter of ["Clinical expertise", "All clinical areas", "Profession", "Connection", "Everyone", "Connected", "Pending", "Invited you", "Location"]) expect(text).toContain(filter);
+    expect(text).not.toContain("Not connected");
+    expect(text).not.toContain("Condition expertise");
+    // An old saved or linked "Not connected" choice opens on Everyone.
+    expect(connectionFilterOf("none")).toBe("all");
+    expect(draw("/clinicians?connection=none").text).toContain(`${CLINICIANS.length - 1} clinicians`);
     expect(text).toContain("demo profiles");
   });
 
@@ -49,15 +62,27 @@ describe("the directory of colleagues", () => {
     expect(text).toContain("your invitation to Dr Tomás Leal is waiting for an answer");
     expect(text).toContain("Accept Ruth Calloway's invitation");
     expect(text).toContain("Connect with Sophie Adair");
-    // My network beside the heading opens its Invitations while some are waiting.
-    expect(html).toContain('href="/community?panel=friends"');
+    // The heading no longer carries a My network card with connection and invitation counts...
+    expect(head(html)).not.toMatch(/My network|connection|invitation/i);
+    expect(html).not.toContain('href="/community?panel=friends"');
+    expect(html).not.toContain('href="/community?panel=friends&amp;tab=requests"');
+    // ...the connection count is in the sidebar's profile card instead, opening My Network at Connections.
+    const connections = friendList(communityStore.load()).length;
+    const panel = renderToStaticMarkup(createElement(Router, { hook: () => ["/clinicians", () => {}] as [string, (to: string) => void] }, createElement(ProfilePanel))).replace(/ data-loc="[^"]*"/g, "");
+    expect(panel).toMatch(new RegExp(`<a href="/community\\?panel=friends&amp;tab=friends"[^>]*>${connections} ${connections === 1 ? "connection" : "connections"}</a>`));
   });
 
-  it("opens already narrowed to a condition area from its address", () => {
-    const rhythm = CLINICIANS.filter(person => person.id !== DEMO_CLINICIAN_ID && person.conditions.some(([groupId]) => groupId === "heart-rhythm"));
+  it("opens already narrowed to a clinical area from its address", () => {
+    const cardiology = CLINICIANS.filter(person => person.id !== DEMO_CLINICIAN_ID && clinicalAreasOf(person).some(area => area.id === "cardiology"));
+    expect(cardiology.map(person => person.id).sort()).toEqual(["imani-clarke", "ruth-calloway", "tomas-leal"]);
+    // An older Library link's group maps to its clinical area: Heart rhythm is Cardiology.
     const { html, text } = draw("/clinicians?area=heart-lungs&group=heart-rhythm");
-    expect(text).toContain(`${rhythm.length} ${rhythm.length === 1 ? "clinician" : "clinicians"}`);
-    expect(html).toContain('aria-label="Remove filter Heart rhythm"');
+    expect(text).toContain(`${cardiology.length} clinicians in Cardiology`);
+    expect(html).toContain('aria-label="Remove filter Cardiology"');
+    expect(html).not.toContain('aria-label="Remove filter Heart rhythm"');
+    expect(draw("/clinicians?expertise=cardiology").text).toContain(`${cardiology.length} clinicians in Cardiology`);
+    // A Library section alone narrows nothing.
+    expect(draw("/clinicians?area=heart-lungs").text).toContain(`${CLINICIANS.length - 1} clinicians `);
   });
 });
 

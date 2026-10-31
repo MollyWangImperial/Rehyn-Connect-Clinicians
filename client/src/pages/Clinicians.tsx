@@ -7,15 +7,15 @@ import { TAB_PATH, panelId, type ClinicianPage } from "@/components/clinicians/C
 import ColleagueProfile from "@/components/clinicians/ColleagueProfile";
 import MeetPage from "@/components/clinicians/MeetPage";
 import { UrgentStart, UrgentStatus } from "@/components/clinicians/Urgent";
-import { Avatar, CONNECTION_FILTERS, ColleagueRow, connectionOf, matchesConnection, mutualOf, myConnections, sharedGroups, type ConnectionFilter } from "@/components/clinicians/network";
+import { CONNECTION_FILTERS, ColleagueRow, connectionFilterOf, connectionOf, matchesConnection, mutualOf, sharedGroups, type ConnectionFilter } from "@/components/clinicians/network";
 import { hueStyle } from "@/components/clinicians/parts";
 import {
-  CLINICIAN_TYPES, clinicianGroups, directoryFilters, directoryHref, groupPlace, professionalTitle, type Clinician, type ClinicianType,
+  CLINICAL_AREAS, CLINICIAN_TYPES, clinicalAreaFromQuery, clinicalAreasOf, clinicianGroups, directoryHref, groupPlace, professionalTitle, type Clinician, type ClinicianType,
 } from "@/content/clinicians";
 import { personOfClinician } from "@/content/community-samples";
 import { librarySections } from "@/content/library";
 import { useClinicians } from "@/lib/clinician-portal";
-import { friendsHref, pendingRequestCount, useCommunity } from "@/lib/community-store";
+import { friendsHref, useCommunity } from "@/lib/community-store";
 import { useMe } from "@/lib/me";
 import { todayLabel } from "./Welcome";
 import "./clinicians.css";
@@ -41,22 +41,20 @@ import "./clinicians.css";
 
 // ------------------------------------------------------------------------------------------------ the directory
 
-type Area = "all" | string;
 type Sort = "relevant" | "name" | "experience";
 
 const surname = (name: string) => name.replace(/^Dr\.? /, "");
 
 /**
- * Find colleagues: search by name, title, workplace or condition; narrow by condition expertise (the Library's sections
- * and groups), profession, location and where they stand with you in My Network. The signed-in clinician isn't listed
+ * Find colleagues: search by name, title, workplace or condition; narrow by clinical expertise (CLINICAL_AREAS, from
+ * each profile's conditions and specialty), profession, location and where they stand with you in My Network. The signed-in clinician isn't listed
  * (their own profile is the sidebar's "View your profile"), nor is anyone they have blocked.
  */
 function Directory() {
-  const start = directoryFilters(useSearch());
-  const [area, setArea] = useState<Area>(start.area);
-  const [groups, setGroups] = useState<string[]>(start.groups);
+  const search = useSearch();
+  const [expertise, setExpertise] = useState(() => clinicalAreaFromQuery(search));
   const [types, setTypes] = useState<ClinicianType[]>([]);
-  const [connection, setConnection] = useState<ConnectionFilter>("all");
+  const [connection, setConnection] = useState<ConnectionFilter>(() => connectionFilterOf(new URLSearchParams(search).get("connection")));
   const [place, setPlace] = useState("");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("relevant");
@@ -65,10 +63,9 @@ function Directory() {
   const memory = useCommunity();
   const me = useMe();
   const count = useRef<HTMLHeadingElement>(null);
-  const section = librarySections.find(item => item.id === area);
+  const area = CLINICAL_AREAS.find(item => item.id === expertise);
   const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(item => item !== value) : [...list, value]);
-  const pickArea = (id: Area) => { setArea(id); setGroups([]); };
-  const clearAll = () => { setArea("all"); setGroups([]); setTypes([]); setConnection("all"); setPlace(""); setQuery(""); };
+  const clearAll = () => { setExpertise("all"); setTypes([]); setConnection("all"); setPlace(""); setQuery(""); };
 
   // Everyone who could be listed, with where they stand with you, before the filters.
   const colleagues = useMemo(() => everyone
@@ -76,6 +73,8 @@ function Directory() {
     .map(person => ({ person, status: connectionOf(memory, person, me).status }))
     .filter(entry => entry.status !== "blocked"), [everyone, memory, me]);
   const places = useMemo(() => colleagues.map(entry => entry.person.place).filter((item, index, list): item is string => !!item && list.indexOf(item) === index).sort(), [colleagues]);
+  // Only the clinical areas someone in the directory actually works in.
+  const areas = useMemo(() => CLINICAL_AREAS.filter(item => colleagues.some(entry => clinicalAreasOf(entry.person).includes(item))), [colleagues]);
 
   const results = useMemo(() => {
     const words = query.trim().toLowerCase();
@@ -86,15 +85,14 @@ function Directory() {
     const rank = (status: string) => (status === "incoming" ? 0 : 1);
     return colleagues.filter(({ person, status }) => {
       const mine = clinicianGroups(person);
-      if (area !== "all" && !mine.some(item => item.section.id === area)) return false;
-      if (groups.length && !mine.some(item => groups.includes(item.group.id))) return false;
+      if (area && !clinicalAreasOf(person).includes(area)) return false;
       if (types.length && !types.includes(person.type)) return false;
       if (place && person.place !== place) return false;
       if (!matchesConnection(status, connection)) return false;
       if (words) {
         const conditions = person.conditions.map(([groupId, conditionId]) => groupPlace(groupId)?.group.conditions.find(item => item.id === conditionId)?.title ?? "");
         const type = CLINICIAN_TYPES.find(item => item.id === person.type)?.label ?? "";
-        const text = [person.name, professionalTitle(person), type, person.org, person.place, person.summary, ...mine.map(item => item.group.title), ...conditions, ...person.languages].join(" ").toLowerCase();
+        const text = [person.name, professionalTitle(person), type, person.org, person.place, person.summary, ...mine.map(item => item.group.title), ...clinicalAreasOf(person).map(item => item.label), ...conditions, ...person.languages].join(" ").toLowerCase();
         if (!words.split(/\s+/).every(word => text.includes(word))) return false;
       }
       return true;
@@ -103,12 +101,11 @@ function Directory() {
       if (sort === "experience") return b.person.years - a.person.years || surname(a.person.name).localeCompare(surname(b.person.name));
       return rank(a.status) - rank(b.status) || score(b.person) - score(a.person) || surname(a.person.name).localeCompare(surname(b.person.name));
     }).map(entry => entry.person);
-  }, [colleagues, area, groups, types, place, connection, query, sort, memory, me]);
+  }, [colleagues, area, types, place, connection, query, sort, memory, me]);
 
   const countFor = (filter: ConnectionFilter) => colleagues.filter(entry => matchesConnection(entry.status, filter)).length;
   const active: { label: string; remove: () => void }[] = [];
-  if (section) active.push({ label: section.title, remove: () => pickArea("all") });
-  for (const id of groups) active.push({ label: groupPlace(id)?.group.title ?? id, remove: () => setGroups(toggle(groups, id)) });
+  if (area) active.push({ label: area.label, remove: () => setExpertise("all") });
   for (const id of types) active.push({ label: CLINICIAN_TYPES.find(type => type.id === id)!.label, remove: () => setTypes(toggle(types, id)) });
   if (place) active.push({ label: place, remove: () => setPlace("") });
   if (connection !== "all") active.push({ label: CONNECTION_FILTERS.find(item => item.id === connection)!.label, remove: () => setConnection("all") });
@@ -126,21 +123,21 @@ function Directory() {
           </label>
           <button type="submit" className="cx-btn cx-btn-primary cn-search-go">Search</button>
         </div>
-        <div className="cn-chiprow" role="group" aria-label="Condition expertise">
-          <span className="cn-chiprow-label">Condition expertise</span>
-          <button type="button" className="cn-filter-chip" aria-pressed={area === "all"} onClick={() => pickArea("all")}>All areas</button>
-          {librarySections.map(item => (
-            <button key={item.id} type="button" className="cn-filter-chip" aria-pressed={area === item.id} onClick={() => pickArea(item.id)}>{item.title}</button>
+        {/* Professional clinical areas (not the Library's patient sections). Chips on a wide screen, a list on a phone. */}
+        <div className="cn-chiprow cn-areas" role="group" aria-label="Clinical expertise">
+          <span className="cn-chiprow-label">Clinical expertise</span>
+          <button type="button" className="cn-filter-chip" aria-pressed={!area} onClick={() => setExpertise("all")}>All clinical areas</button>
+          {areas.map(item => (
+            <button key={item.id} type="button" className="cn-filter-chip" aria-pressed={area?.id === item.id} onClick={() => setExpertise(item.id)}>{item.label}</button>
           ))}
         </div>
-        {section && (
-          <div className="cn-chiprow is-sub" role="group" aria-label={`Within ${section.title}`}>
-            <span className="cn-chiprow-label">Within {section.title}</span>
-            {section.groups.map(group => (
-              <button key={group.id} type="button" className="cn-filter-chip" aria-pressed={groups.includes(group.id)} onClick={() => setGroups(toggle(groups, group.id))}>{group.title}</button>
-            ))}
-          </div>
-        )}
+        <label className="cn-areas-select">
+          <span className="cn-chiprow-label">Clinical expertise</span>
+          <select className="cn-select" value={area?.id ?? "all"} onChange={event => setExpertise(event.target.value)}>
+            <option value="all">All clinical areas</option>
+            {areas.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}
+          </select>
+        </label>
       </form>
 
       <div className="cn-layout">
@@ -184,7 +181,7 @@ function Directory() {
 
         <section className="cn-results" aria-label="Results">
           <div className="cn-results-head">
-            <h2 ref={count} tabIndex={-1} className="cn-count" aria-live="polite">{results.length} {results.length === 1 ? "clinician" : "clinicians"}{section && <span className="cn-count-for"> in {(groups.length === 1 ? groupPlace(groups[0])?.group.title : undefined) ?? section.title}</span>}</h2>
+            <h2 ref={count} tabIndex={-1} className="cn-count" aria-live="polite">{results.length} {results.length === 1 ? "clinician" : "clinicians"}{area && <span className="cn-count-for"> in {area.label}</span>}</h2>
             <label className="cn-sort">Sort by
               <select className="cn-select" value={sort} onChange={event => setSort(event.target.value as Sort)}>
                 <option value="relevant">Most relevant</option>
@@ -238,27 +235,14 @@ function ClinicianHub({ page }: { page: ClinicianPage }) {
   const panel = (which: ClinicianPage, body: ReactNode) => (
     <div id={panelId(which)} className="cl-tab-panel" hidden={page !== which}>{body}</div>
   );
-  const memory = useCommunity();
-  const me = useMe();
-  const connections = myConnections(memory, me).length;
-  const invitations = pendingRequestCount(memory);
   return (
     <div className="cl-page cn-page">
+      {/* The connection count lives in the sidebar's profile card now (and My Network has its own row there). */}
       <div className="cn-head">
         <div className="cn-head-text">
-          <p className="cx-kicker">Professional network</p>
-          <h1 className="cn-h1" data-page-heading>Clinicians</h1>
-          <p className="cn-lead">Find doctors, therapists, nurses and other clinicians by name, specialty or the conditions they work with. View their profiles and connect to grow your professional network.</p>
+          <p className="cx-kicker">Doctors and healthcare professionals</p>
+          <h1 className="cn-h1" data-page-heading>Your Clinical Network</h1>
         </div>
-        {/* My Network's own numbers: the directory and My Network share one connection state. */}
-        <Link href={`~${friendsHref(invitations > 0 ? "requests" : "friends")}`} className="cx-card cn-net">
-          <Avatar clinician={me.clinician} size={44} />
-          <span className="cn-net-text">
-            <strong>My network</strong>
-            <span>{connections} {connections === 1 ? "connection" : "connections"}{invitations > 0 && <> · <span className="cn-net-count">{invitations} {invitations === 1 ? "invitation" : "invitations"}</span></>}</span>
-          </span>
-          <ArrowRight size={18} aria-hidden="true" />
-        </Link>
       </div>
 
       {/* For clinicians the directory stands alone: their consultations and weekly patient sessions have their own

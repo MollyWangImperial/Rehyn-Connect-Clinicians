@@ -22,20 +22,21 @@ export function connectionOf(memory: CommunityMemory, clinician: Clinician, me: 
 }
 
 /** The directory's connection filter, in the words My Network uses. */
-export type ConnectionFilter = "all" | "connected" | "pending" | "invited" | "none";
+// (There is no "Not connected" choice: people you aren't connected with are found under Everyone and by search.)
+export type ConnectionFilter = "all" | "connected" | "pending" | "invited";
 export const CONNECTION_FILTERS: { id: ConnectionFilter; label: string }[] = [
   { id: "all", label: "Everyone" },
   { id: "connected", label: "Connected" },
   { id: "pending", label: "Pending" },
   { id: "invited", label: "Invited you" },
-  { id: "none", label: "Not connected" },
 ];
+/** A connection filter from saved state or an address; anything else (an old "Not connected") is Everyone. */
+export const connectionFilterOf = (value: unknown): ConnectionFilter => CONNECTION_FILTERS.find(item => item.id === value)?.id ?? "all";
 export function matchesConnection(status: Connection, filter: ConnectionFilter) {
-  if (filter === "all") return true;
   if (filter === "connected") return status === "friend";
   if (filter === "pending") return status === "sent";
   if (filter === "invited") return status === "incoming";
-  return status === "none" || status === "unavailable";
+  return true;
 }
 
 /** The signed-in clinician's connections, never themselves. */

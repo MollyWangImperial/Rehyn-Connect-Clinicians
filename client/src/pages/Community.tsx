@@ -22,6 +22,7 @@ import "./community.css";
 import "./community-spaces.css";
 import "./community-start.css";
 import "./community-friends.css";
+import "./community-friends-clinician.css";
 import "./community-settings.css";
 import "./community-safety.css";
 import "./community-alerts.css";

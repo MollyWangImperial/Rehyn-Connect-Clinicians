@@ -6,10 +6,16 @@ import { SettingsContext } from "@/components/settings-context";
 import Clinicians from "@/pages/Clinicians";
 import { clinicianHref } from "@/components/clinicians/SpeakToClinician";
 import { findCondition } from "@/lib/library";
+import { DEMO_CLINICIAN_ID } from "@/lib/me";
 import {
-  CLINICIANS, PRICE_MAX, PRICE_MIN, SEEN_BY, WEEKLY_SESSIONS, directoryFilters, findClinician, freeSoon, freeTimes, nextFree, nextWeeklySessions, sessionOpen, upcomingSessions,
+  CLINICAL_AREAS, CLINICIANS, PRICE_MAX, PRICE_MIN, SEEN_BY, WEEKLY_SESSIONS, clinicalAreaFromQuery, clinicalAreasOf, directoryFilters, findClinician, freeSoon, freeTimes, nextFree, nextWeeklySessions, sessionOpen, upcomingSessions,
 } from "./clinicians";
 import { librarySections } from "./library";
+
+/** Text as React writes it into the page's markup. */
+const escaped = (text: string) => text.replace(/&/g, "&amp;").replace(/'/g, "&#x27;");
+/** The clinicians the directory lists: everyone but the signed-in (demo) clinician and anyone unlisted. */
+const colleagues = CLINICIANS.filter(person => person.listed !== false && person.id !== DEMO_CLINICIAN_ID);
 
 /** Draws the Clinicians tab at an address ("/clinicians" is the directory) inside its nested route, as the app does. */
 function draw(address: string) {
@@ -98,9 +104,29 @@ describe("the clinicians", () => {
 });
 
 describe("the Clinicians tab", () => {
-  it("is a directory of colleagues with the Library's condition areas as filters, and no prices, booking or urgent route", () => {
+  it("is a directory of colleagues with professional clinical areas as filters, and no prices, booking or urgent route", () => {
     const { html, text } = draw("/clinicians");
-    for (const area of ["All areas", "Brain &amp; nervous system", "Kidneys, liver &amp; digestion"]) expect(html).toContain(area);
+    expect(text).toContain("Clinical expertise");
+    expect(html).toContain("All clinical areas");
+    // Only the clinical areas some listed colleague works in, as chips and (for phones) as a list.
+    for (const area of CLINICAL_AREAS) {
+      const worked = colleagues.some(person => clinicalAreasOf(person).includes(area));
+      for (const shape of [`>${escaped(area.label)}</button>`, `>${escaped(area.label)}</option>`]) {
+        if (worked) expect(html, area.id).toContain(shape);
+        else expect(html, area.id).not.toContain(shape);
+      }
+    }
+    expect(html).toContain(">Neurology</button>");
+    expect(html).toContain(">Cardiology</button>");
+    expect(html).not.toContain(">Respiratory medicine</button>");
+    // The Library's patient-facing sections and groups are no longer the directory's filters.
+    expect(html).not.toContain("All areas");
+    expect(text).not.toContain("Condition expertise");
+    expect(text).not.toMatch(/Within /);
+    for (const section of librarySections) {
+      expect(html, section.id).not.toContain(`>${escaped(section.title)}</button>`);
+      expect(html, section.id).not.toContain(`>${escaped(section.title)}</option>`);
+    }
     expect(html).toContain('aria-label="Search"');
     expect(text).toContain("example clinicians while the network is being set up");
     // The patient edition's booking from the directory is gone: no prices, Book buttons or urgent route.
@@ -120,7 +146,8 @@ describe("the Clinicians tab", () => {
     const { html } = draw("/clinicians");
     expect(panels(html)).toEqual([["find", false]]);
     expect(html).not.toContain('class="cl-tab"');
-    expect(html.match(/<h1[^>]*>Clinicians/g)).toHaveLength(1);
+    expect(html.match(/<h1[^>]*>Your Clinical Network</g)).toHaveLength(1);
+    expect(html).not.toMatch(/<h1[^>]*>Clinicians/);
     // My consultations is in the portal now.
     const consultations = draw("/clinicians/consultations");
     expect(consultations.redirectTo).toBe("~/clinicians/portal/consultations");
@@ -151,14 +178,34 @@ describe("the Clinicians tab", () => {
     expect(html).toContain('href="/clinicians/" class="cl-request">Browse all clinicians');
   });
 
-  it("opens the directory already narrowed by its address, ignoring areas and groups the Library doesn't have", () => {
+  it("opens the directory already narrowed by its address, mapping an older Library link to its clinical area and ignoring unknown ones", () => {
     expect(directoryFilters("area=heart-lungs&group=heart-rhythm&group=stroke")).toEqual({ area: "heart-lungs", groups: ["heart-rhythm"] });
     expect(directoryFilters("area=nowhere&group=stroke")).toEqual({ area: "all", groups: [] });
-    const rhythm = CLINICIANS.filter(person => person.conditions.some(([groupId]) => groupId === "heart-rhythm"));
-    const { html, text } = draw("/clinicians?area=heart-lungs&group=heart-rhythm");
-    expect(text).toContain(`${rhythm.length} ${rhythm.length === 1 ? "clinician" : "clinicians"}`);
-    expect(html).toContain('aria-label="Remove filter Heart &amp; lungs"');
-    expect(html).toContain('aria-label="Remove filter Heart rhythm"');
+    // The directory reads ?expertise=<clinical area>; an older link's Library group maps to its clinical area, and a
+    // section alone (or anything unknown) opens on all clinical areas.
+    expect(clinicalAreaFromQuery("expertise=neurology")).toBe("neurology");
+    expect(clinicalAreaFromQuery("expertise=nowhere")).toBe("all");
+    expect(clinicalAreaFromQuery("area=heart-lungs&group=heart-rhythm")).toBe("cardiology");
+    expect(clinicalAreaFromQuery("area=brain-nervous-system&group=stroke")).toBe("stroke");
+    expect(clinicalAreaFromQuery("area=heart-lungs")).toBe("all");
+    expect(clinicalAreaFromQuery("area=nowhere&group=nowhere")).toBe("all");
+    const cardiology = colleagues.filter(person => clinicalAreasOf(person).some(area => area.id === "cardiology"));
+    expect(cardiology.map(person => person.name).sort()).toEqual(["Dr Tomás Leal", "Imani Clarke", "Ruth Calloway"]);
+    for (const address of ["/clinicians?area=heart-lungs&group=heart-rhythm", "/clinicians?expertise=cardiology"]) {
+      const { html, text } = draw(address);
+      expect(text, address).toContain(`${cardiology.length} clinicians in Cardiology`);
+      expect(html, address).toContain('aria-label="Remove filter Cardiology"');
+      expect(html, address).not.toContain('aria-label="Remove filter Heart &amp; lungs"');
+      expect(html, address).not.toContain('aria-label="Remove filter Heart rhythm"');
+      for (const person of colleagues) {
+        if (cardiology.includes(person)) expect(html, person.id).toContain(`href="/clinicians/${person.id}"`);
+        else expect(html, person.id).not.toContain(`href="/clinicians/${person.id}"`);
+      }
+    }
+    // A section alone narrows nothing.
+    const { text } = draw("/clinicians?area=heart-lungs");
+    expect(text).toContain(`${colleagues.length} clinicians`);
+    expect(text).not.toContain(" clinicians in ");
   });
 
   it("opens a colleague's profile with registration, experience and conditions leading to the Library, and no price or booking", () => {

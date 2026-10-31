@@ -44,6 +44,10 @@ export default function ProfilePanel({ careTeam = false, onNavigate }: { careTea
           <span className="site-me-words">
             <b>{me.name}</b>
             <Link className="site-me-link" {...link(me.profileHref)}>View your profile</Link>
+            {/* The live number of connections, opening My Network at Connections (invitations keep their own badge below). */}
+            <Link className="site-me-connections" {...link(communityHref("feed", null, { panel: "friends", tab: "friends" }))}>
+              {connections} {connections === 1 ? "connection" : "connections"}
+            </Link>
           </span>
         </div>
         <ul className="site-rows">
